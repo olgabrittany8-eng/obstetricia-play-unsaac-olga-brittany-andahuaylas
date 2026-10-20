@@ -1,0 +1,1659 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Obstetricia Life 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=IBM+Plex+Mono:wght@500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Concepto: videojuego de avatares cúbicos en un hospital materno infantil.
+   Mundo 3D claro y colorido; interfaz oscura tipo monitor clínico con un único acento turquesa. */
+:root {
+  color-scheme: dark;
+  --ink: #EAF6F5;
+  --muted: #A9C6C5;
+  --panel: rgba(9, 29, 35, 0.88);
+  --panel-solid: #0D262C;
+  --line: rgba(160, 222, 216, 0.24);
+  --brand: #47D1C6;
+  --brand-ink: #04211F;
+  --warn: #FFC857;
+  --bad: #FF8B7B;
+  --ok: #6EE0A5;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --mm: 150px;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: #0A1A1F; color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; overflow: hidden; }
+button { font: inherit; color: inherit; cursor: pointer; }
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; letter-spacing: -0.01em; }
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+kbd { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; background: var(--brand); color: var(--brand-ink); border-radius: 6px; padding: 1px 8px; }
+
+#game { position: relative; width: 100%; height: 100%; overflow: hidden; background: #BFE3F0; touch-action: none; user-select: none; -webkit-user-select: none; }
+#gl { display: block; width: 100%; height: 100%; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.eyebrow { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.mini { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; font-weight: 600; min-height: 34px; }
+.mini:hover { border-color: var(--brand); }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 10px 20px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-solid); font-weight: 600; }
+.btn:hover { border-color: var(--brand); }
+.btn.primary { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+.btn.primary:hover { filter: brightness(1.08); }
+
+/* HUD */
+.hud-left { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); top: 14px; display: flex; flex-direction: column; gap: 8px; width: min(300px, calc(100% - var(--mm) - 52px)); pointer-events: none; }
+.hud-left > * { pointer-events: auto; }
+.lvl { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.lvl-row { display: flex; justify-content: space-between; gap: 8px; font-size: 0.82rem; }
+.lvl-row b { font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; }
+.lvl-row span { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.xpbar { height: 6px; background: rgba(255,255,255,0.12); border-radius: 3px; overflow: hidden; }
+.xpbar i { display: block; height: 100%; width: 0; background: var(--brand); transition: width 0.4s; }
+.obj { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.obj p { font-size: 0.88rem; }
+.hud-right { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: 14px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+#minimap { width: var(--mm); height: calc(var(--mm) * 1.1); display: block; cursor: pointer; }
+#minimap.big { position: fixed; z-index: 30; inset: 0; margin: auto; width: min(92vw, 380px); height: min(80vh, 418px); }
+.btnrow { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.prompt { position: absolute; left: 50%; bottom: 24%; transform: translateX(-50%); display: inline-flex; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--brand); border-radius: 12px; padding: 10px 16px; font-weight: 600; max-width: calc(100% - 32px); }
+.toast { position: absolute; left: 50%; top: 18%; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; max-width: min(520px, calc(100% - 32px)); text-align: center; font-weight: 500; pointer-events: none; }
+#touch { position: absolute; inset: auto 0 0 0; height: 190px; pointer-events: none; }
+#joy { position: absolute; left: max(22px, env(safe-area-inset-left, 0px)); bottom: 26px; width: 120px; height: 120px; border-radius: 50%; background: rgba(9,29,35,0.55); border: 2px solid var(--line); pointer-events: auto; touch-action: none; }
+#joy i { position: absolute; left: 35px; top: 35px; width: 50px; height: 50px; border-radius: 50%; background: var(--brand); opacity: 0.85; }
+.tbtn { position: absolute; width: 74px; height: 74px; border-radius: 50%; pointer-events: auto; background: var(--panel); border: 2px solid var(--brand); font-weight: 700; font-size: 1.1rem; }
+#t-act { right: max(22px, env(safe-area-inset-right, 0px)); bottom: 28px; }
+#t-run { right: max(108px, calc(env(safe-area-inset-right, 0px) + 86px)); bottom: 28px; width: 62px; height: 62px; font-size: 0.78rem; border-color: var(--line); }
+#t-run.on { background: var(--brand); color: var(--brand-ink); }
+
+/* Diálogo */
+.dlg { position: absolute; left: 50%; bottom: max(14px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: min(760px, calc(100% - 28px)); max-height: min(80%, 640px); overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; z-index: 10; }
+.dlg-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.dlg-head h3 { font-size: 1.15rem; font-weight: 600; color: var(--brand); }
+.dlg-say { font-size: 1.02rem; }
+.dlg-ask { font-weight: 600; font-size: 1.02rem; }
+.vis-card { background: #04151A; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 0.88rem; }
+.vis-card .k { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); align-self: center; }
+.vis-card .v { font-family: var(--font-mono); font-weight: 500; color: #BDEBE5; overflow-wrap: anywhere; }
+.vis-card .t { grid-column: 1 / -1; }
+.vis-us { display: block; max-width: 100%; border-radius: 10px; border: 1px solid var(--line); }
+.choices { display: flex; flex-direction: column; gap: 8px; }
+.ch { text-align: left; display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); min-height: 46px; }
+.ch:hover:not([disabled]) { border-color: var(--brand); background: rgba(71,209,198,0.1); }
+.ch .l { font-family: var(--font-mono); font-weight: 600; flex: none; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); display: inline-flex; align-items: center; justify-content: center; font-size: 0.78rem; }
+.ch .x { min-width: 0; overflow-wrap: anywhere; }
+.ch.bad { border-color: var(--bad); background: rgba(255,139,123,0.12); }
+.ch.good { border-color: var(--ok); background: rgba(110,224,165,0.14); }
+.ch[disabled] { cursor: default; opacity: 0.55; }
+.ch.good[disabled], .ch.bad[disabled] { opacity: 1; }
+.fb { border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.fb.ok { background: rgba(110,224,165,0.14); }
+.fb.no { background: rgba(255,139,123,0.14); }
+.fb h4 { margin: 0; font-family: var(--font-display); font-size: 1rem; }
+.fb.ok h4 { color: var(--ok); }
+.fb.no h4 { color: var(--bad); }
+.fb .reply { font-style: italic; color: var(--muted); }
+.dlg-actions { display: flex; gap: 8px; justify-content: space-between; flex-wrap: wrap; }
+
+/* OB-Bot */
+.botp { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); width: min(430px, calc(100% - 32px)); max-height: min(70%, 520px); overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; z-index: 12; }
+.botp h3 { font-size: 1.1rem; font-weight: 600; color: var(--brand); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: rgba(255,255,255,0.05); border-radius: 999px; padding: 6px 12px; font-size: 0.82rem; }
+.chip:hover { border-color: var(--brand); }
+.botans { background: #04151A; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 0.9rem; }
+.small { font-size: 0.78rem; color: var(--muted); }
+
+/* Pantallas */
+.overlay { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(6, 22, 27, 0.55); overflow-y: auto; }
+.card { width: min(560px, 100%); background: var(--panel-solid); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 14px; max-height: 100%; overflow-y: auto; }
+.card h1 { font-size: clamp(2rem, 8vw, 2.8rem); font-weight: 800; line-height: 1.02; }
+.card h2 { font-size: 1.3rem; font-weight: 600; }
+.lead { color: var(--muted); }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.sw { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; background: rgba(255,255,255,0.04); font-size: 0.82rem; min-height: 40px; }
+.sw i { width: 18px; height: 18px; border-radius: 4px; display: inline-block; border: 1px solid rgba(255,255,255,0.35); }
+.sw.sel { border-color: var(--brand); background: rgba(71,209,198,0.14); }
+.sw[disabled] { opacity: 0.5; cursor: not-allowed; }
+.keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; font-size: 0.85rem; color: var(--muted); }
+.keys b { color: var(--ink); font-family: var(--font-mono); font-weight: 600; }
+.plist { display: flex; flex-direction: column; gap: 8px; }
+.pi { border-top: 1px solid var(--line); padding-top: 8px; font-size: 0.88rem; }
+.pi b { font-family: var(--font-display); font-weight: 600; }
+.pi .st { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+.pi.done .st { color: var(--ok); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+#start{background:radial-gradient(120% 90% at 20% 10%,rgba(71,209,198,.28),transparent 55%),linear-gradient(180deg,rgba(6,22,27,.2),rgba(6,22,27,.85));align-items:flex-end}
+@media(min-width:760px){#start{align-items:center;justify-content:flex-start;padding-left:6vw}}
+#start .card{background:rgba(9,29,35,.82);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-color:rgba(160,222,216,.4);box-shadow:0 30px 80px rgba(0,0,0,.45),0 0 0 6px rgba(71,209,198,.08);animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.logo{width:64px;height:64px;filter:drop-shadow(0 6px 14px rgba(71,209,198,.5));animation:bob 3.2s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-6px) rotate(-3deg)}}
+.title3d{background:linear-gradient(100deg,#fff 10%,#9CF2EA 45%,#47D1C6 70%,#FFC857);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.stat{border:1px solid var(--line);border-radius:999px;padding:4px 12px;font:600 .74rem var(--font-mono);color:#BDEBE5;background:rgba(71,209,198,.08)}
+#btn-start{font-size:1.05rem;min-height:54px;padding:12px 28px;animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(71,209,198,.6)}70%,100%{box-shadow:0 0 0 16px rgba(71,209,198,0)}}
+@media(prefers-reduced-motion:reduce){#start .card,.logo,#btn-start{animation:none}}
+@media (max-width: 560px) { :root { --mm: 112px; } .prompt { bottom: 30%; } .hud-right .btnrow { flex-direction: column; align-items: flex-end; } }
+</style>
+
+<div id="game">
+  <canvas id="gl"></canvas>
+
+  <div id="hud" hidden>
+    <div class="hud-left">
+      <div class="panel lvl">
+        <div class="lvl-row"><b id="lvlname">Nivel 1 · Estudiante</b><span id="xptxt">0 / 100 XP</span></div>
+        <div class="xpbar"><i id="xpfill"></i></div>
+      </div>
+      <div class="panel obj">
+        <span class="eyebrow">Objetivo</span>
+        <p id="objtext"></p>
+        <button class="mini" id="btn-instr" type="button">Instrucciones</button>
+      </div>
+    </div>
+    <div class="hud-right">
+      <canvas id="minimap" class="panel" width="150" height="165" aria-label="Mapa del hospital"></canvas>
+      <div class="btnrow">
+        <button class="mini" id="btn-bot" type="button">OB-Bot</button>
+        <button class="mini snd" type="button"></button><button class="mini" id="btn-pause" type="button">Pausa</button>
+      </div>
+    </div>
+    <button id="prompt" class="prompt" type="button" hidden><kbd id="prompt-key">E</kbd><span id="prompt-text"></span></button>
+    <div id="toast" class="toast" hidden></div>
+    <div id="touch" hidden>
+      <div id="joy" aria-label="Palanca de movimiento"><i id="joyknob"></i></div>
+      <button id="t-run" class="tbtn" type="button">Correr</button>
+      <button id="t-act" class="tbtn" type="button">E</button>
+    </div>
+  </div>
+
+  <section id="dialog" class="panel dlg" hidden aria-live="polite">
+    <div class="dlg-head"><h3 id="dlg-who"></h3><span class="eyebrow" id="dlg-meta"></span></div>
+    <div id="dlg-visual" hidden></div>
+    <p class="dlg-say" id="dlg-say" hidden></p>
+    <p class="dlg-ask" id="dlg-ask" hidden></p>
+    <div class="choices" id="dlg-choices"></div>
+    <div class="fb" id="dlg-fb" hidden>
+      <h4 id="fb-title"></h4>
+      <p id="fb-text"></p>
+      <p class="reply" id="fb-reply" hidden></p>
+    </div>
+    <div class="dlg-actions">
+      <button class="btn" id="dlg-exit" type="button">Salir</button>
+      <button class="btn primary" id="dlg-primary" type="button" hidden>Continuar</button>
+    </div>
+  </section>
+
+  <section id="bot" class="panel botp" hidden>
+    <div class="dlg-head"><h3>OB-Bot · asistente</h3><button class="mini" id="bot-close" type="button">Cerrar</button></div>
+    <div class="botans" id="bot-ans">Hola, soy OB-Bot. Elige un tema o pide una pista para tu objetivo actual.</div>
+    <div class="chips" id="bot-chips"></div>
+    <p class="small">Respuestas programadas, educativas y ficticias. Contrástalas con tu docente y las normas técnicas vigentes.</p>
+  </section>
+
+  <div id="start" class="overlay">
+    <div class="card">
+      <svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4 56 18v28L32 60 8 46V18z" fill="#0D262C" stroke="#47D1C6" stroke-width="3" stroke-linejoin="round"/><path d="M32 44C20 36 17 29 21 24c3-3.5 8-2.5 11 2 3-4.5 8-5.5 11-2 4 5 1 12-11 20z" fill="#FF8B7B"/><path d="M32 12v8M28 16h8" stroke="#FFC857" stroke-width="3" stroke-linecap="round"/></svg>
+      <p class="eyebrow">Hospital materno infantil · simulación educativa</p>
+      <h1 class="title3d">Obstetricia Life 3D</h1>
+      <p class="lead">Eres estudiante de obstetricia. Camina por el hospital, abre puertas, conversa con pacientes ficticias y toma decisiones clínicas. Cada respuesta te explica el porqué.</p>
+      <div class="stats"><span class="stat" id="stat-eps"></span><span class="stat">6 salas 3D</span><span class="stat">6 niveles</span><span class="stat">Música y sonido</span></div>
+      <div>
+        <p class="eyebrow">Elige tu uniforme</p>
+        <div class="swatches" id="start-sw"></div>
+      </div>
+      <div class="keys" id="start-keys"></div>
+      <div class="row"><button class="btn primary" id="btn-start" type="button">Entrar al hospital</button><button class="btn snd" type="button"></button></div>
+      <p class="small" id="start-save"></p>
+      <p class="small">Todos los casos son ficticios y con fines educativos. No reemplazan las guías clínicas ni la supervisión docente.</p>
+    </div>
+  </div>
+
+  <div id="pause" class="overlay" hidden>
+    <div class="card">
+      <h2>Pausa</h2>
+      <div class="row"><button class="btn primary" id="btn-resume" type="button">Continuar</button><button class="btn" id="btn-reset" type="button">Reiniciar progreso</button><button class="btn snd" type="button"></button></div>
+      <div><p class="eyebrow">Uniforme</p><div class="swatches" id="pause-sw"></div></div>
+      <div><p class="eyebrow">Registro de progreso</p><div class="plist" id="pause-prog"></div></div>
+      <div><p class="eyebrow">Controles</p><div class="keys" id="pause-keys"></div></div>
+    </div>
+  </div>
+
+  <div id="fatal" class="overlay" hidden>
+    <div class="card"><h2>No se pudo iniciar el modo 3D</h2><p class="lead">Tu navegador no pudo cargar Three.js o WebGL. Prueba con otro navegador, activa la aceleración por hardware y recarga la página.</p></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* =====================================================================
+     DATOS DEL JUEGO
+     ===================================================================== */
+  var UNIFORMS = [
+    { id: "celeste", name: "Celeste clínico", top: 0x4FB4DA, bottom: 0x2F86AB, lvl: 1 },
+    { id: "verde", name: "Verde quirúrgico", top: 0x2FA37C, bottom: 0x1F7A5C, lvl: 1 },
+    { id: "lila", name: "Lila", top: 0x8E7CC3, bottom: 0x6B5AA3, lvl: 2 },
+    { id: "vino", name: "Vino", top: 0xB04A63, bottom: 0x8A3349, lvl: 3 },
+    { id: "blanco", name: "Mandil blanco", top: 0xF2F5F6, bottom: 0x5E7F94, lvl: 4 },
+    { id: "dorado", name: "Dirección dorada", top: 0xE3B341, bottom: 0x6E5A1F, lvl: 5 }
+  ];
+  var LEVELS = [0, 100, 250, 450, 700, 1000];
+  var LEVEL_NAMES = ["Estudiante", "Interno o interna", "Obstetra en práctica", "Obstetra de guardia", "Jefatura de servicio", "Dirección del hospital"];
+
+  function C(t, ok, w) { return { t: t, ok: !!ok, w: w }; }
+
+  var MISSIONS = {
+    T0: { title: "Bienvenida", noxp: true, npc: "Marisol", npcId: "marisol", bonus: 0, steps: [
+      { who: "Marisol · recepción", emote: "smile", say: "Bienvenida o bienvenido al Hospital Materno Infantil. Registra a las pacientes en el computador del mostrador. Las salas de ecografía, partos y neonatología son áreas restringidas: se abren cuando completas las misiones anteriores." }
+    ] },
+
+    R: { title: "Registro en recepción", where: { x: 6.9, z: 6.4 }, bonus: 20,
+      instr: "Acércate al mostrador de recepción (a la derecha del vestíbulo) y usa el computador. Confirma la identidad de Camila, dirígela al servicio correcto y protege la privacidad de las pacientes.",
+      hint: "Ve al mostrador del vestíbulo, a la derecha de la entrada, y presiona E junto al computador.",
+      unlocks: ["Consultorio prenatal: ya puedes atender a Camila."],
+      steps: [
+        { who: "Recepción", say: "Camila Rojas Quispe tiene una cita hoy: primer control prenatal. Acaba de llegar al mostrador.", ask: "¿Cómo verificas su identidad antes de registrarla?", c: [
+          C("Le pido su nombre completo y su DNI, y los comparo con los datos de la cita.", 1, "Usar dos identificadores (nombre completo y documento) evita confundir a pacientes con nombres parecidos y protege la seguridad de la atención."),
+          C("Le pregunto solo «¿eres Camila?» y asiento.", 0, "Una pregunta cerrada puede recibir un «sí» por error. Pide que la paciente diga su nombre y confírmalo con el documento."),
+          C("La registro sin preguntar: ya la vi entrar.", 0, "Nunca asumas la identidad. Un error de identificación puede mezclar historias clínicas."),
+          C("Reviso solo el nombre en la lista de citas.", 0, "El nombre solo no basta: hay personas con nombres iguales. Añade el DNI u otro dato.")
+        ] },
+        { who: "Recepción", say: "Identidad confirmada. Ahora debes indicarle adónde ir.", ask: "¿A qué servicio la diriges?", c: [
+          C("Consultorio prenatal.", 1, "Su cita es un primer control prenatal, que se atiende en el consultorio prenatal."),
+          C("Sala de partos.", 0, "La sala de partos es para mujeres en trabajo de parto."),
+          C("Neonatología.", 0, "Neonatología atiende a recién nacidos."),
+          C("Aula de obstetricia.", 0, "El aula es un espacio de estudio, no de atención.")
+        ] },
+        { who: "Sra. Elena · sala de espera", say: "Disculpa, ¿esa joven embarazada vino por algún problema? Soy su vecina.", ask: "¿Qué respondes?", c: [
+          C("Le explico con amabilidad que la información de las pacientes es confidencial y que solo ella puede compartirla.", 1, "La confidencialidad es un derecho de la paciente y un deber profesional."),
+          C("Le cuento el motivo de la cita.", 0, "Compartir datos de salud sin autorización viola la confidencialidad."),
+          C("Le muestro la historia en la pantalla.", 0, "Las historias clínicas solo las ve el personal autorizado."),
+          C("Le digo solo la fecha probable de parto.", 0, "Cualquier dato de salud es confidencial, también una fecha.")
+        ] }
+      ] },
+
+    M1: { title: "Primera consulta prenatal", npc: "Camila", npcId: "camila", where: { x: -14.6, z: -5.6 }, bonus: 60,
+      instr: "Abre la puerta del Consultorio prenatal (la primera a la izquierda del pasillo) y presiona E junto a Camila. Sigue los pasos de la consulta: saludo, historia, preguntas, evaluaciones, resultados, cuidados, señales de alarma y registro.",
+      hint: "El Consultorio prenatal es la primera puerta al fondo a la izquierda del pasillo. Camila te espera dentro.",
+      unlocks: ["Sala de ecografía habilitada.", "Habitación de puerperio habilitada."],
+      steps: [
+        { who: "Camila", emote: "smile", say: "Hola, vengo para mi control del embarazo.", ask: "¿Cómo la recibes?",
+          reply: "Estoy bien, gracias. Solo un poco nerviosa: es mi primer embarazo.", replyEmote: "smile", c: [
+          C("Buenas tardes, Camila. Soy estudiante de obstetricia. Pase y siéntese, por favor. ¿Cómo se encuentra hoy?", 1, "Saludar, presentarte y preguntar cómo está genera confianza y ayuda a que la paciente cuente sus molestias."),
+          C("Siéntese. Dígame rápido qué le pasa.", 0, "El trato apresurado reduce la confianza. Preséntate y pregunta cómo se siente."),
+          C("No digo nada y empiezo a tomarle la presión.", 0, "Antes de cualquier procedimiento debes saludar, explicar qué harás y pedir su colaboración."),
+          C("¿Trae el dinero de la consulta?", 0, "El primer contacto debe centrarse en la persona, no en trámites.")
+        ] },
+        { who: "Historia clínica (ficticia)", visual: { type: "card", rows: [
+            ["Paciente", "Camila Rojas Quispe · 24 años"], ["Gestación", "10 semanas por FUR referida"], ["Antecedentes", "Sin enfermedades crónicas ni alergias conocidas"],
+            ["Embarazos previos", "Ninguno"], ["Signos vitales", "PA 110/70 mmHg · FC 78 lpm"], ["Peso y talla", "58 kg · 1,60 m (IMC 22,7)"], ["Molestias", "Náuseas matutinas leves, sin sangrado"] ] },
+          ask: "Revisando la historia: ¿cómo se registra su fórmula obstétrica y qué significa?", c: [
+          C("G1 P0: primera gestación y ningún parto previo.", 1, "G indica las gestaciones (incluida la actual) y P los partos. Camila cursa su primera gestación y no ha tenido partos."),
+          C("G0 P1: ninguna gestación y un parto.", 0, "No coincide: ya está embarazada (G1) y no tiene partos previos."),
+          C("G2 P1: dos gestaciones y un parto.", 0, "La historia indica que no tiene embarazos previos."),
+          C("G1 P1: una gestación y un parto.", 0, "Aún no ha tenido un parto, así que P es 0.")
+        ] },
+        { who: "Camila", emote: "smile", ask: "¿Qué pregunta es la más apropiada para esta primera consulta?",
+          reply: "No, nada de eso. Solo náuseas por la mañana y un poco de cansancio.", c: [
+          C("¿Ha tenido sangrado vaginal, dolor abdominal o flujo anormal desde que empezó el embarazo?", 1, "Explorar síntomas de alarma como sangrado, dolor o flujo es parte de la entrevista dirigida del primer control."),
+          C("¿Por qué no usó anticonceptivos?", 0, "Evita preguntas que juzgan. La entrevista debe ser respetuosa y sin culpa."),
+          C("¿Cuánto gana su pareja?", 0, "No es un dato clínico necesario para esta consulta."),
+          C("¿Ya eligió el nombre del bebé? Es lo más importante hoy.", 0, "Es un tema bonito, pero primero evalúas la salud de ella y del bebé.")
+        ] },
+        { who: "Camila", ask: "¿Qué evaluaciones corresponden en este primer control?", c: [
+          C("Peso, talla y presión arterial, más exámenes: hemoglobina, grupo sanguíneo y Rh, glucosa, VIH, sífilis y orina.", 1, "El primer control combina medidas básicas y tamizajes para detectar anemia, riesgo de incompatibilidad Rh, alteraciones de glucosa, infecciones y bacteriuria."),
+          C("Solo pesarla.", 0, "El peso es una de varias medidas; faltan presión arterial, talla y exámenes."),
+          C("Esperar al tercer trimestre para pedir exámenes.", 0, "Los tamizajes se piden temprano: tratar a tiempo protege a la madre y al bebé."),
+          C("Una radiografía de tórax y de abdomen.", 0, "No se solicita de rutina: evita radiación sin indicación clínica.")
+        ] },
+        { who: "Resultados (ficticios)", visual: { type: "card", rows: [
+            ["Presión arterial", "110/70 mmHg"], ["Peso", "58 kg"], ["Hemoglobina", "12,0 g/dL (ajustada)"], ["Grupo y Rh", "O positivo"],
+            ["Glucosa en ayunas", "82 mg/dL"], ["VIH y sífilis", "No reactivos"], ["Orina", "Sin hallazgos"] ] },
+          ask: "¿Cómo interpretas estos resultados?", c: [
+          C("Están dentro de lo esperado: se continúa el control, se indica la suplementación según la norma y se programa el siguiente control.", 1, "No hay anemia, alteración de glucosa ni infecciones detectadas. Al ser Rh positivo no necesita inmunoglobulina anti-D."),
+          C("Tiene anemia y debe hospitalizarse.", 0, "Una hemoglobina de 12,0 g/dL ajustada no indica anemia: en gestantes el corte es menor de 11 g/dL."),
+          C("Es Rh positivo: necesita inmunoglobulina anti-D.", 0, "La anti-D se considera en gestantes Rh negativas, no en Rh positivas."),
+          C("La presión está alta: referirla a emergencia.", 0, "110/70 mmHg es normal. La hipertensión en el embarazo se define con 140/90 mmHg o más.")
+        ] },
+        { who: "Camila", emote: "worried", say: "¿Cuándo debo venir de urgencia?", ask: "¿Qué señales de alarma le enseñas?",
+          reply: "Entendido, voy a anotarlas en mi cuaderno.", replyEmote: "smile", c: [
+          C("Sangrado vaginal, pérdida de líquido, fiebre, dolor de cabeza intenso o visión borrosa, dolor abdominal fuerte o vómitos que no le permiten alimentarse.", 1, "Son señales de alarma del embarazo: ante cualquiera debe acudir de inmediato al establecimiento de salud."),
+          C("Solo cuando le toque su próxima cita.", 0, "Las señales de alarma requieren atención inmediata, sin esperar la cita."),
+          C("Nunca: todo en el embarazo es normal.", 0, "Muchas molestias son normales, pero hay signos que indican riesgo y deben conocerse."),
+          C("Solo si tiene náuseas por la mañana.", 0, "Las náuseas leves son frecuentes al inicio; alarma el vómito persistente que impide comer y beber.")
+        ] },
+        { who: "Camila", emote: "smile", say: "¿Y qué cuidados debo tener en casa?", ask: "¿Qué cuidados le recomiendas?", c: [
+          C("Alimentación variada, suplementos indicados, descanso, no consumir alcohol ni tabaco y asistir a todos sus controles.", 1, "Estos cuidados favorecen un embarazo saludable. La suplementación se da según indicación del servicio."),
+          C("Reposo absoluto en cama todo el embarazo.", 0, "El reposo absoluto no se recomienda de rutina: la actividad física suave es beneficiosa."),
+          C("Tomar cualquier medicamento sin consultar.", 0, "En el embarazo no deben tomarse medicamentos sin indicación del personal de salud."),
+          C("Comer por dos para que el bebé crezca bien.", 0, "No hay que «comer por dos»: importa la calidad de los alimentos y un aumento moderado de calorías más adelante.")
+        ] },
+        { who: "Camila", ask: "Antes de despedirla, ¿cómo registras la consulta?",
+          reply: "Gracias, me siento más tranquila. Nos vemos en mi próximo control.", replyEmote: "smile", c: [
+          C("En la historia clínica y el carné perinatal: fecha, hallazgos, resultados, indicaciones y próxima cita.", 1, "Todo lo que se hace se registra: así el equipo puede dar seguimiento y garantizar la continuidad de la atención."),
+          C("No registro nada para ahorrar tiempo.", 0, "Sin registro no hay seguimiento posible ni respaldo de la atención."),
+          C("Lo anoto en un papel suelto.", 0, "Los datos clínicos van en la historia clínica y el carné perinatal, no en papeles sueltos."),
+          C("Registro solo si hubo problemas.", 0, "También los controles normales se registran: permiten comparar la evolución.")
+        ] }
+      ] },
+
+    M2: { title: "Ecografía obstétrica", npc: "Ecógrafo", where: { x: -2.9, z: -6.4 }, bonus: 40,
+      instr: "Entra a la Sala de ecografía y presiona E junto al ecógrafo. Aprenderás qué mide cada ecografía y cómo preparar a la paciente.",
+      hint: "La Sala de ecografía es la segunda puerta del pasillo. Se abre al completar la primera consulta prenatal.",
+      unlocks: ["Sala de partos autorizada."],
+      steps: [
+        { who: "Ecógrafo (simulado)", visual: { type: "us", mode: "us1" }, say: "Imagen educativa simulada de una ecografía del primer trimestre.", ask: "¿Qué medida se usa para calcular la edad gestacional en el primer trimestre?", c: [
+          C("Longitud cráneo-nalga (LCC).", 1, "En el primer trimestre el embrión crece de forma muy uniforme; la LCC es la medida más precisa para fechar el embarazo."),
+          C("Perímetro abdominal.", 0, "El perímetro abdominal se usa más adelante para valorar el crecimiento."),
+          C("Longitud del fémur.", 0, "El fémur se mide en el segundo y tercer trimestre."),
+          C("Peso de la madre.", 0, "El peso materno no sirve para estimar la edad gestacional.")
+        ] },
+        { who: "Ecografía", say: "La paciente está en la camilla, lista para el estudio.", ask: "Antes de iniciar la ecografía, ¿qué haces?", c: [
+          C("Explico el procedimiento, pido su consentimiento y cuido su privacidad.", 1, "La información previa, el consentimiento y la privacidad son parte de una atención respetuosa."),
+          C("Empiezo directo para ahorrar tiempo.", 0, "Siempre se explica el procedimiento y se pide consentimiento."),
+          C("Dejo que otras personas pasen a mirar.", 0, "Debes proteger la privacidad de la paciente."),
+          C("Aplico el gel sin avisar.", 0, "Avisa y explica cada paso para que la paciente se sienta segura.")
+        ] },
+        { who: "Ecógrafo (simulado)", visual: { type: "us", mode: "us2" }, say: "Imagen educativa simulada de una ecografía del tercer trimestre.", ask: "En el tercer trimestre se evalúa el crecimiento con la biometría fetal. ¿Qué medidas incluye?", c: [
+          C("Diámetro biparietal o perímetro cefálico, perímetro abdominal y longitud del fémur.", 1, "Estas medidas permiten estimar el peso fetal y vigilar el crecimiento."),
+          C("Color del cabello y talla de la madre.", 0, "No son medidas de biometría fetal."),
+          C("Solo el sexo del bebé.", 0, "El sexo no informa sobre el crecimiento."),
+          C("Peso de la placenta en gramos.", 0, "Durante la ecografía la placenta se evalúa por su ubicación y madurez, no por su peso.")
+        ] },
+        { who: "Ecografía", ask: "¿La ecografía obstétrica usa radiación ionizante?", c: [
+          C("No: usa ondas de ultrasonido.", 1, "El ultrasonido no es radiación ionizante; por eso es el estudio de imagen de elección en el embarazo."),
+          C("Sí, igual que una radiografía.", 0, "La radiografía usa radiación ionizante; la ecografía no."),
+          C("Sí, pero en dosis mínimas.", 0, "No usa radiación ionizante en ninguna dosis."),
+          C("Solo en el primer trimestre.", 0, "No usa radiación ionizante en ningún trimestre.")
+        ] }
+      ] },
+
+    M3: { title: "Etapas del trabajo de parto", npc: "Valeria", npcId: "valeria", where: { x: 5.9, z: -6.2 }, bonus: 40,
+      instr: "Entra a la Sala de partos (área restringida) y presiona E junto a Valeria. Aprenderás los periodos del trabajo de parto y el cuidado inmediato.",
+      hint: "La Sala de partos es la tercera puerta. Se autoriza al completar la Ecografía obstétrica.",
+      unlocks: ["Neonatología autorizada."],
+      steps: [
+        { who: "Valeria", emote: "worried", say: "Tengo contracciones fuertes cada 3 minutos. ¡No aguanto!", ask: "Al tacto vaginal tiene 7 cm de dilatación. ¿En qué periodo está?", reply: "Siento que cada vez es más fuerte, pero quiero seguir.", replyEmote: "worried", c: [
+          C("Periodo de dilatación, fase activa.", 1, "El periodo de dilatación va hasta los 10 cm; con 7 cm está en fase activa."),
+          C("Periodo expulsivo.", 0, "El expulsivo empieza con dilatación completa (10 cm)."),
+          C("Alumbramiento.", 0, "El alumbramiento es la salida de la placenta, después del nacimiento."),
+          C("Puerperio inmediato.", 0, "El puerperio inmediato son las primeras horas después del parto.")
+        ] },
+        { who: "Valeria", ask: "¿Qué herramienta usas para registrar su progreso (dilatación, descenso, FCF y contracciones)?", c: [
+          C("Partograma.", 1, "El partograma muestra el progreso del trabajo de parto y permite detectar a tiempo desvíos."),
+          C("Escala de Apgar.", 0, "El Apgar califica al recién nacido, no el trabajo de parto."),
+          C("Hoja de balance hídrico.", 0, "Sirve para controlar líquidos, no el progreso del parto."),
+          C("Carné de vacunas.", 0, "Registra vacunas, no el trabajo de parto.")
+        ] },
+        { who: "Valeria", emote: "worried", say: "¿Puedo moverme? Acostada me duele más.", ask: "¿Qué apoyo le ofreces durante el trabajo de parto?", reply: "Gracias por explicarme, así me siento más segura.", replyEmote: "smile", c: [
+          C("Acompañamiento, información, libertad de movimiento y posición, hidratación y respeto de su privacidad.", 1, "El apoyo continuo y la libertad de movimiento mejoran la experiencia de la mujer y favorecen el progreso."),
+          C("Mantenerla acostada boca arriba sin moverse.", 0, "Se recomienda dejar que elija la posición; evita imponerla."),
+          C("No permitir ningún acompañante.", 0, "El acompañamiento de su elección es recomendable."),
+          C("Evitar darle información para no asustarla.", 0, "Informar a la mujer reduce la ansiedad y favorece su participación.")
+        ] },
+        { who: "Valeria", ask: "Llega a 10 cm de dilatación. ¿Qué periodo comienza?", c: [
+          C("El periodo expulsivo, que termina con el nacimiento del bebé.", 1, "El expulsivo va desde la dilatación completa hasta el nacimiento."),
+          C("El alumbramiento.", 0, "El alumbramiento ocurre después del nacimiento."),
+          C("El puerperio.", 0, "El puerperio empieza tras el alumbramiento."),
+          C("La fase latente.", 0, "La fase latente es previa, al inicio de la dilatación.")
+        ] },
+        { who: "Sala de partos", say: "El bebé acaba de nacer y está vigoroso.", ask: "En el primer minuto, para prevenir la hemorragia, ¿qué corresponde?", c: [
+          C("Administrar oxitocina 10 UI por vía intramuscular (manejo activo del alumbramiento).", 1, "El manejo activo del alumbramiento, con oxitocina en el primer minuto, reduce la hemorragia posparto."),
+          C("Esperar una hora sin intervenir.", 0, "Esperar aumenta el riesgo de hemorragia."),
+          C("Dar paracetamol.", 0, "El paracetamol es un analgésico y no previene la hemorragia."),
+          C("Solo cortar el cordón.", 0, "Cortar el cordón no previene la hemorragia posparto.")
+        ] },
+        { who: "Sala de partos", say: "Valeria ya tuvo el alumbramiento. Está en el puerperio inmediato.", ask: "En las primeras 2 horas, ¿qué vigilas?", c: [
+          C("Sangrado, tono del útero, presión arterial y pulso.", 1, "Esas son las primeras señales de hemorragia o inestabilidad en el puerperio inmediato."),
+          C("Solo la talla del bebé.", 0, "La talla no se vigila en la madre; el foco es su sangrado y estabilidad."),
+          C("Solo si tiene hambre.", 0, "Lo prioritario es detectar hemorragia y alteraciones hemodinámicas."),
+          C("Nada: ya terminó el parto.", 0, "Las primeras 2 horas son críticas y exigen vigilancia.")
+        ] }
+      ] },
+
+    M4: { title: "Primeros cuidados del recién nacido", npc: "Recién nacido", where: { x: 13.5, z: -8.8 }, bonus: 40,
+      instr: "Entra a Neonatología y presiona E junto a las incubadoras. Repasarás los cuidados al nacer: piel con piel, cordón, Apgar, temperatura y vacunas.",
+      hint: "Neonatología es la última puerta del pasillo, a la derecha. Se autoriza al completar la Sala de partos.",
+      unlocks: [],
+      steps: [
+        { who: "Recién nacido (simulado)", say: "Un recién nacido a término llora fuerte apenas sale.", ask: "¿Qué haces primero?", c: [
+          C("Secarlo, abrigarlo y ponerlo piel con piel sobre su madre.", 1, "El secado y el contacto piel con piel previenen la hipotermia y favorecen el vínculo y la lactancia."),
+          C("Bañarlo de inmediato.", 0, "El baño se pospone para evitar el enfriamiento."),
+          C("Separarlo de la madre para pesarlo.", 0, "Si está vigoroso, se prioriza el piel con piel; el peso puede esperar."),
+          C("Aspirarle la boca y la nariz de rutina.", 0, "No se aspira de rutina si el bebé llora y respira bien.")
+        ] },
+        { who: "Recién nacido (simulado)", ask: "¿Cuándo se pinza el cordón umbilical si el bebé está vigoroso?", c: [
+          C("Entre 1 y 3 minutos.", 1, "El pinzamiento tardío mejora las reservas de hierro y reduce la anemia infantil."),
+          C("De inmediato, en los primeros 5 segundos.", 0, "El pinzamiento inmediato se reserva para situaciones específicas."),
+          C("Después de 10 minutos.", 0, "No hace falta esperar tanto."),
+          C("No se pinza.", 0, "Se pinza y se corta en el momento adecuado.")
+        ] },
+        { who: "Recién nacido (simulado)", ask: "¿Cuál de estos NO es un parámetro del Apgar?", c: [
+          C("Temperatura.", 1, "El Apgar evalúa frecuencia cardiaca, respiración, tono muscular, reflejos y color. La temperatura se controla aparte."),
+          C("Frecuencia cardiaca.", 0, "Sí es un parámetro del Apgar."),
+          C("Tono muscular.", 0, "Sí es un parámetro del Apgar."),
+          C("Color de la piel.", 0, "Sí es un parámetro del Apgar.")
+        ] },
+        { who: "Recién nacido (simulado)", say: "Mides la temperatura axilar al bebé: 36,2 °C.", ask: "¿Cómo lo interpretas?", c: [
+          C("Hipotermia leve: contacto piel con piel, abrigo y control de nuevo.", 1, "La temperatura axilar normal del recién nacido es de 36,5 a 37,5 °C; por debajo hay estrés por frío."),
+          C("Temperatura normal.", 0, "El rango normal es de 36,5 a 37,5 °C."),
+          C("Fiebre.", 0, "La fiebre sería una temperatura alta, no baja."),
+          C("Hipotermia grave sin tratamiento posible.", 0, "No es grave y sí se corrige con medidas simples.")
+        ] },
+        { who: "Recién nacido (simulado)", ask: "¿Qué vacunas se administran al nacer?", c: [
+          C("BCG y hepatitis B.", 1, "Se aplican idealmente dentro de las primeras 12 horas de vida."),
+          C("Pentavalente y polio.", 0, "Empiezan a los 2 meses."),
+          C("SPR y varicela.", 0, "Son vacunas de edades posteriores."),
+          C("Neumococo y rotavirus.", 0, "Empiezan a los 2 meses.")
+        ] }
+      ] },
+
+    M5: { title: "Puerperio y lactancia", npc: "Rosa", npcId: "rosa", where: { x: 15.5, z: 5.0 }, bonus: 40,
+      instr: "Entra a la habitación de puerperio (primera puerta a la derecha en el lado sur del pasillo) y presiona E junto a Rosa.",
+      hint: "La habitación de puerperio queda en el lado sur del pasillo, hacia la derecha.",
+      unlocks: [],
+      steps: [
+        { who: "Rosa", emote: "worried", say: "Hace dos días di a luz y sigo sangrando. ¿Es normal?", ask: "¿Qué le explicas?", reply: "Menos mal, ya estaba asustada.", replyEmote: "smile", c: [
+          C("Es normal (loquios): empieza rojo, luego rosado y después blanquecino; debe consultar si es muy abundante, con coágulos grandes o mal olor.", 1, "Los loquios duran varias semanas y cambian de color; las señales de alarma son abundancia, coágulos grandes y mal olor."),
+          C("Es normal sin importar la cantidad.", 0, "Un sangrado muy abundante puede indicar hemorragia."),
+          C("Es grave: debe hospitalizarse ya.", 0, "El sangrado moderado en los primeros días es esperable."),
+          C("No debe preocuparse nunca.", 0, "Debe conocer las señales de alarma.")
+        ] },
+        { who: "Rosa", emote: "worried", say: "Mi bebé no se prende bien al pecho.", ask: "¿Qué orientas?", c: [
+          C("Revisar posición y agarre, lactancia a libre demanda y contacto piel con piel.", 1, "Un buen agarre y la libre demanda favorecen la producción de leche y previenen grietas."),
+          C("Darle fórmula desde ya.", 0, "La fórmula innecesaria reduce el estímulo de succión y la producción de leche."),
+          C("Espaciar las tomas cada 4 horas.", 0, "El bebé debe mamar a libre demanda."),
+          C("Suspender la lactancia.", 0, "Se ofrece apoyo, no se suspende.")
+        ] },
+        { who: "Rosa", emote: "smile", ask: "¿Cuál es una señal de alarma en el puerperio?", c: [
+          C("Fiebre, sangrado abundante, dolor de cabeza intenso o herida con secreción.", 1, "Pueden indicar infección, hemorragia o hipertensión: requieren atención inmediata."),
+          C("Cansancio ocasional.", 0, "El cansancio es esperable en el puerperio."),
+          C("Subida de la leche al tercer día.", 0, "Es un proceso normal."),
+          C("Entuertos leves al amamantar.", 0, "Son contracciones uterinas normales mientras el útero involuciona.")
+        ] },
+        { who: "Rosa", emote: "smile", say: "Estoy dando solo pecho. ¿Qué método anticonceptivo puedo usar?", ask: "¿Qué método NO conviene antes de los 6 meses?", reply: "Gracias, lo conversaré con mi pareja.", replyEmote: "smile", c: [
+          C("Anticonceptivo combinado con estrógeno.", 1, "Los métodos con estrógeno no se recomiendan en lactancia antes de los 6 meses porque pueden disminuir la producción de leche."),
+          C("Implante de progestágeno.", 0, "Es compatible con la lactancia."),
+          C("Condón.", 0, "Es compatible con la lactancia y protege contra ITS."),
+          C("DIU de cobre.", 0, "Es compatible con la lactancia.")
+        ] }
+      ] },
+
+    M6: { title: "Anatomía y embarazo", npc: "Maqueta", where: { x: -13.5, z: 10.0 }, bonus: 30,
+      instr: "Entra al Aula de obstetricia (puerta a la izquierda en el lado sur del pasillo) y presiona E junto a la maqueta.",
+      hint: "El aula queda en el lado sur del pasillo, hacia la izquierda.",
+      unlocks: [],
+      steps: [
+        { who: "Maqueta del aparato reproductor", ask: "¿Dónde ocurre normalmente la fecundación?", c: [
+          C("En la trompa de Falopio.", 1, "El óvulo y el espermatozoide suelen encontrarse en la trompa de Falopio."),
+          C("En el ovario.", 0, "En el ovario se desarrolla y libera el óvulo."),
+          C("En la vagina.", 0, "En la vagina se deposita el semen."),
+          C("En el cuello uterino.", 0, "El cuello es el paso entre la vagina y el útero.")
+        ] },
+        { who: "Maqueta del aparato reproductor", ask: "¿Dónde se implanta el embrión?", c: [
+          C("En el endometrio, que es el revestimiento interno del útero.", 1, "La implantación ocurre en el endometrio, unos días después de la fecundación."),
+          C("En la trompa de Falopio.", 0, "La implantación en la trompa sería un embarazo ectópico."),
+          C("En la vagina.", 0, "No es un sitio de implantación."),
+          C("En el ovario.", 0, "No es el sitio habitual de implantación.")
+        ] },
+        { who: "Pizarra", ask: "¿Cuánto dura aproximadamente un embarazo a término?", c: [
+          C("Unas 40 semanas contadas desde la FUR.", 1, "El embarazo dura unas 40 semanas (280 días) contadas desde el primer día de la última regla."),
+          C("Unas 30 semanas.", 0, "Eso correspondería a un bebé prematuro."),
+          C("Unas 52 semanas.", 0, "Es mucho más de lo normal."),
+          C("Unas 20 semanas.", 0, "Es la mitad del embarazo.")
+        ] },
+        { who: "Pizarra", ask: "¿Qué hormona detecta una prueba de embarazo?", c: [
+          C("La gonadotropina coriónica humana (hCG).", 1, "La hCG la produce el trofoblasto tras la implantación y se detecta en sangre y orina."),
+          C("La insulina.", 0, "No es la hormona del embarazo."),
+          C("La adrenalina.", 0, "No es la hormona del embarazo."),
+          C("La melatonina.", 0, "No es la hormona del embarazo.")
+        ] }
+      ] },
+
+    M7: { title: "Alerta: hipertensión en el embarazo", npc: "Gestante simulada", where: { x: -11.6, z: -5.8 }, bonus: 50, after: "M1", obj: "Vuelve al consultorio y evalúa a la gestante en la camilla.",
+      instr: "En el Consultorio prenatal, acércate a la camilla de evaluación y presiona E.", hint: "La camilla está al fondo del consultorio prenatal, a la derecha de Camila.", unlocks: [],
+      steps: [
+        { who: "Control prenatal (ficticio)", visual: { type: "card", rows: [["Gestante", "Lucía M. · 34 semanas"], ["Presión arterial", "152/102 mmHg (repetida a los 15 min)"], ["Síntomas", "Dolor de cabeza intenso y zumbido de oídos"], ["Orina", "Proteínas +++"]] }, ask: "¿Qué cuadro sospechas?", c: [
+          C("Preeclampsia con signos de severidad.", 1, "Presión de 140/90 mmHg o más desde las 20 semanas, con proteinuria y síntomas neurológicos, orienta a preeclampsia severa."),
+          C("Un embarazo normal con estrés.", 0, "Esas cifras y síntomas no son normales: requieren actuar."),
+          C("Anemia del embarazo.", 0, "La anemia no causa hipertensión ni proteinuria."),
+          C("Infección urinaria simple.", 0, "No explica la hipertensión ni los síntomas neurológicos.")
+        ] },
+        { who: "Control prenatal (ficticio)", ask: "¿Cuál de estos es un signo de alarma que indica gravedad?", c: [
+          C("Dolor en la boca del estómago, visión borrosa o convulsiones.", 1, "Son signos de severidad y pueden anticipar una eclampsia."),
+          C("Hinchazón leve de tobillos al final del día.", 0, "Es frecuente en el embarazo normal."),
+          C("Antojos de comida.", 0, "No es un signo clínico de gravedad."),
+          C("Aumento del apetito.", 0, "No es un signo de gravedad.")
+        ] },
+        { who: "Control prenatal (ficticio)", ask: "¿Cuál es la conducta inmediata?", reply: "Gracias por actuar rápido.", c: [
+          C("Activar la emergencia obstétrica: referir o trasladar de urgencia, vigilar y dar sulfato de magnesio según indicación médica.", 1, "El sulfato de magnesio previene las convulsiones y el traslado oportuno protege a la madre y al bebé."),
+          C("Enviarla a casa con reposo y cita en 15 días.", 0, "Es una urgencia: no puede esperar."),
+          C("Dar solo paracetamol y esperar.", 0, "El dolor de cabeza aquí es un signo de gravedad, no una molestia común."),
+          C("Indicar ergometrina.", 0, "La ergometrina eleva la presión arterial y está contraindicada.")
+        ] }
+      ] },
+
+    M8: { title: "Maniobras de Leopold y vigilancia fetal", npc: "Gestante simulada", where: { x: -6.5, z: -9.5 }, bonus: 50, after: "M2", obj: "Ve a la Sala de ecografía y practica las maniobras de Leopold.",
+      instr: "En la Sala de ecografía, acércate al escritorio del fondo y presiona E.", hint: "El escritorio con computador está al fondo de la Sala de ecografía.", unlocks: [],
+      steps: [
+        { who: "Gestante de 36 semanas (simulada)", ask: "Con las maniobras de Leopold, ¿qué determinas?", c: [
+          C("Situación, presentación y posición del feto, palpando el abdomen.", 1, "Son cuatro maniobras abdominales no invasivas; la cuarta ayuda a valorar el encajamiento."),
+          C("La dilatación del cuello uterino.", 0, "Eso se evalúa con el tacto vaginal."),
+          C("El grupo sanguíneo.", 0, "Se determina con un examen de laboratorio."),
+          C("La presión arterial.", 0, "Se toma con tensiómetro.")
+        ] },
+        { who: "Gestante de 36 semanas (simulada)", ask: "Cerca del término, ¿qué presentación es la esperada?", c: [
+          C("Cefálica: la cabeza fetal hacia la pelvis.", 1, "A término la mayoría de los bebés están de cabeza, lo que favorece el parto vaginal."),
+          C("Podálica (pies primero).", 0, "La presentación podálica o pelviana es menos frecuente y requiere valoración."),
+          C("Transversa (de lado).", 0, "La situación transversa impide el parto vaginal y requiere conducta especial."),
+          C("Ninguna: el bebé flota sin posición.", 0, "El feto sí adopta una presentación definida al final del embarazo.")
+        ] },
+        { who: "Gestante de 36 semanas (simulada)", ask: "¿Cuál es el rango normal de la frecuencia cardiaca fetal?", reply: "Escuchar su corazoncito me tranquiliza.", replyEmote: "smile", c: [
+          C("110 a 160 latidos por minuto.", 1, "Fuera de ese rango (taquicardia o bradicardia) hay que investigar."),
+          C("60 a 100 latidos por minuto.", 0, "Es el rango del adulto en reposo; en el feto sería bradicardia."),
+          C("180 a 220 latidos por minuto.", 0, "Sería taquicardia fetal."),
+          C("30 a 50 latidos por minuto.", 0, "Sería una bradicardia grave.")
+        ] }
+      ] },
+
+    M9: { title: "Emergencia: hemorragia posparto", npc: "Maniquí de simulación", where: { x: 2.4, z: -6.2 }, bonus: 50, after: "M3", obj: "Regresa a la Sala de partos y atiende la emergencia en la camilla.",
+      instr: "En la Sala de partos, acércate al pie de la camilla de parto y presiona E.", hint: "La camilla de parto está al centro de la Sala de partos.", unlocks: [],
+      steps: [
+        { who: "Sala de partos (simulada)", say: "Tras el parto vaginal, el sangrado acumulado llega a 600 ml y continúa.", ask: "¿Cómo se llama este cuadro?", c: [
+          C("Hemorragia posparto.", 1, "Se define por sangrado mayor de 500 ml tras parto vaginal (1000 ml en cesárea) o con inestabilidad."),
+          C("Loquios normales.", 0, "Los loquios son un sangrado esperado y de menor cantidad."),
+          C("Menstruación.", 0, "No corresponde: es un sangrado excesivo tras el nacimiento."),
+          C("Sangrado de implantación.", 0, "Ocurre al inicio del embarazo.")
+        ] },
+        { who: "Sala de partos (simulada)", ask: "¿Cuál es la causa más frecuente?", c: [
+          C("Atonía uterina: el útero no se contrae bien.", 1, "Es la causa principal; otras son el trauma, los restos placentarios y las alteraciones de la coagulación."),
+          C("Infección urinaria.", 0, "No causa hemorragia posparto inmediata."),
+          C("Mastitis.", 0, "Es una infección de la mama."),
+          C("Estreñimiento.", 0, "No se relaciona con el sangrado.")
+        ] },
+        { who: "Sala de partos (simulada)", ask: "El útero está blando y el sangrado continúa. ¿Qué haces primero?", c: [
+          C("Pedir ayuda, hacer masaje uterino, canalizar vía venosa y administrar uterotónicos.", 1, "Es la respuesta escalonada inicial: activar al equipo y recuperar el tono del útero."),
+          C("Esperar una hora a ver si cede.", 0, "Esperar empeora el choque."),
+          C("Dar de alta a la madre.", 0, "Está en riesgo vital y necesita atención inmediata."),
+          C("Dar solo líquidos por la boca.", 0, "Se requiere vía venosa y tratamiento inmediato.")
+        ] }
+      ] },
+
+    M10: { title: "Reanimación del recién nacido", npc: "Maniquí neonatal", where: { x: 11.2, z: -9.4 }, bonus: 50, after: "M4", obj: "Vuelve a Neonatología y practica la reanimación en la primera incubadora.",
+      instr: "En Neonatología, acércate a la primera incubadora (la de la izquierda) y presiona E.", hint: "Es la incubadora más cercana a la puerta de Neonatología.", unlocks: [],
+      steps: [
+        { who: "Recién nacido (simulado)", say: "Un recién nacido a término está flácido, no llora ni respira.", ask: "¿Qué haces primero?", c: [
+          C("Pedir ayuda, secarlo y abrigarlo, posicionar la cabeza y estimularlo.", 1, "Los pasos iniciales incluyen calor, vía aérea abierta y estimulación táctil suave."),
+          C("Darle leche materna de inmediato.", 0, "Antes hay que establecer la respiración."),
+          C("Hacer compresiones torácicas sin más.", 0, "Las compresiones van después de ventilar eficazmente."),
+          C("Esperar 5 minutos.", 0, "Cada segundo cuenta.")
+        ] },
+        { who: "Recién nacido (simulado)", ask: "Sigue sin respirar tras estimularlo. ¿Qué corresponde?", c: [
+          C("Ventilación con presión positiva con bolsa y mascarilla.", 1, "La ventilación es el paso más importante en la reanimación neonatal."),
+          C("Dar oxígeno cerca de la cara y observar.", 0, "El oxígeno libre no reemplaza la ventilación."),
+          C("Bañarlo con agua tibia.", 0, "No es un tratamiento de reanimación."),
+          C("Administrar vacunas.", 0, "No corresponde en este momento.")
+        ] },
+        { who: "Recién nacido (simulado)", ask: "¿Cuándo se inician las compresiones torácicas?", c: [
+          C("Si la frecuencia cardiaca sigue por debajo de 60 lpm tras ventilación eficaz.", 1, "Primero se logra ventilar bien; solo entonces, con FC menor de 60 lpm, se comprime."),
+          C("En cuanto el bebé no llora.", 0, "Primero se ventila."),
+          C("Cuando pesa más de 3 kg.", 0, "El peso no es criterio."),
+          C("Nunca se inician.", 0, "Sí se inician en esa situación.")
+        ] }
+      ] },
+
+    M11: { title: "Diabetes gestacional", npc: "Pizarra de casos", where: { x: -16.2, z: 7.2 }, bonus: 50, after: "M1", obj: "Ve al Aula de obstetricia y analiza el caso de diabetes gestacional.",
+      instr: "En el Aula de obstetricia, acércate al espacio entre los dos pupitres del lado izquierdo y presiona E.", hint: "Está entre los pupitres del fondo izquierdo del aula.", unlocks: [],
+      steps: [
+        { who: "Caso clínico (ficticio)", ask: "¿Cuándo se hace el tamizaje habitual de diabetes gestacional?", c: [
+          C("Entre las 24 y 28 semanas, o antes si hay factores de riesgo.", 1, "En ese periodo aumenta la resistencia a la insulina y la detección es más útil."),
+          C("A las 6 semanas, siempre.", 0, "Antes se evalúa solo si hay factores de riesgo."),
+          C("Solo después del parto.", 0, "Debe detectarse durante el embarazo."),
+          C("A las 40 semanas.", 0, "Es demasiado tarde.")
+        ] },
+        { who: "Caso clínico (ficticio)", visual: { type: "card", rows: [["Gestante", "Ana P. · 26 semanas"], ["Glucosa en ayunas", "96 mg/dL"], ["Antecedente", "Madre con diabetes tipo 2"]] }, ask: "¿Cómo interpretas esta glucosa en ayunas?", c: [
+          C("Es compatible con diabetes gestacional (92 mg/dL o más) y requiere manejo.", 1, "El corte en ayunas es 92 mg/dL; se confirma el diagnóstico y se inicia el plan."),
+          C("Es normal en el embarazo.", 0, "Supera el valor de corte de 92 mg/dL."),
+          C("Es hipoglucemia.", 0, "La hipoglucemia sería un valor bajo."),
+          C("No importa si se siente bien.", 0, "Puede no dar síntomas y aun así afectar al bebé.")
+        ] },
+        { who: "Caso clínico (ficticio)", ask: "¿Qué indicas como primera medida?", c: [
+          C("Alimentación saludable fraccionada, actividad física y control de glucemias; insulina si no logra las metas.", 1, "El plan nutricional y el ejercicio son la base; la insulina se agrega si no hay control."),
+          C("Ayuno prolongado para bajar la glucosa.", 0, "El ayuno es peligroso en el embarazo."),
+          C("Comer solo dulces.", 0, "Empeoraría la glucosa."),
+          C("Suspender los controles.", 0, "El seguimiento es esencial.")
+        ] }
+      ] }
+  };
+  var ORDER = ["R", "M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10", "M11"];
+
+  var BOT_TOPICS = [
+    { k: "¿Qué es el control prenatal?", a: "Es el conjunto de atenciones regulares durante el embarazo para vigilar la salud de la madre y del bebé, detectar riesgos a tiempo y educar a la gestante. Las normas peruanas piden como mínimo 6 controles y la OMS recomienda 8 contactos con el servicio de salud." },
+    { k: "Señales de alarma", a: "Sangrado vaginal, pérdida de líquido, fiebre, dolor de cabeza intenso con visión borrosa, hinchazón repentina de cara y manos, dolor abdominal fuerte, vómitos persistentes y disminución o ausencia de movimientos fetales. Ante cualquiera, acudir de inmediato al establecimiento de salud." },
+    { k: "Etapas del trabajo de parto", a: "1) Dilatación (hasta 10 cm), con fase latente y fase activa. 2) Expulsivo: desde dilatación completa hasta el nacimiento. 3) Alumbramiento: salida de la placenta. 4) Puerperio inmediato: primeras 2 horas de vigilancia. El partograma registra el progreso." },
+    { k: "Puntaje de Apgar", a: "Evalúa 5 aspectos: frecuencia cardiaca, respiración, tono muscular, reflejos y color. Se califica al minuto y a los 5 minutos con 0, 1 o 2 puntos cada uno (máximo 10)." },
+    { k: "Lactancia materna", a: "Se recomienda iniciarla en la primera hora, ofrecer lactancia exclusiva hasta los 6 meses y a libre demanda, y continuar con alimentos complementarios hasta los 2 años o más. El contacto piel con piel ayuda al inicio." },
+    { k: "Ecografía obstétrica", a: "Usa ultrasonido, sin radiación ionizante. En el primer trimestre sirve para confirmar la edad gestacional (LCC); en el tercero, para evaluar crecimiento fetal, líquido amniótico y placenta." },
+    { k: "¿Cómo gano XP?", a: "Ganas 15 XP por responder bien a la primera, 8 XP si aciertas tras reintentar y un bono al completar cada misión. Al subir de nivel desbloqueas uniformes; al completar misiones se abren nuevas salas." }
+  ];
+
+  /* =====================================================================
+     ESTADO Y PERSISTENCIA
+     ===================================================================== */
+  var SAVE_KEY = "obstetricia-life-3d-v1";
+  var state = { xp: 0, done: {}, uniform: "celeste", entered: false, started: false, dialog: false, bot: false, pause: false, bigmap: false };
+  var lessonProg = {};
+
+  function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ xp: state.xp, done: state.done, uniform: state.uniform })); } catch (e) {} }
+  function load() {
+    try {
+      var raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return;
+      var d = JSON.parse(raw);
+      if (typeof d.xp === "number") state.xp = d.xp;
+      if (d.done && typeof d.done === "object") state.done = d.done;
+      if (typeof d.uniform === "string") state.uniform = d.uniform;
+    } catch (e) {}
+  }
+  function levelOf(xp) { var l = 1; for (var i = 0; i < LEVELS.length; i++) if (xp >= LEVELS[i]) l = i + 1; return l; }
+  function uniformById(id) { for (var i = 0; i < UNIFORMS.length; i++) if (UNIFORMS[i].id === id) return UNIFORMS[i]; return UNIFORMS[0]; }
+  load();
+  if (uniformById(state.uniform).lvl > levelOf(state.xp)) state.uniform = "celeste";
+
+  /* =====================================================================
+     ESCENA 3D
+     ===================================================================== */
+  /* ---------- Sonido (Web Audio, sin archivos) ---------- */
+  var AU = { ctx: null, on: true };
+  try { if (localStorage.getItem("ob3d-sound") === "off") AU.on = false; } catch (e) {}
+  function tone(f, t0, dur, type, vol, dest, slide, att) {
+    var c = AU.ctx, o = c.createOscillator(), g = c.createGain(), a = att || 0.02;
+    o.type = type || "sine"; o.frequency.setValueAtTime(f, t0); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + a); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(dest || AU.fx); o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function startMusic() {
+    var CH = [[261.6, 329.6, 392], [220, 261.6, 329.6], [174.6, 220, 261.6], [196, 246.9, 392]], n = 0;
+    function bar() {
+      if (!AU.ctx) return; var t = AU.ctx.currentTime + 0.05, ch = CH[n++ % 4];
+      ch.forEach(function (f) { tone(f / 2, t, 5, "sine", 0.5, AU.mus, 0, 1.4); });
+      [0, 1, 2, 1, 2, 1].forEach(function (k, i) { tone(ch[k] * 2, t + 0.5 + i * 0.6, 1.3, "triangle", 0.2, AU.mus, 0, 0.05); });
+    }
+    bar(); setInterval(bar, 4000);
+  }
+  function audioInit() {
+    if (AU.ctx) { if (AU.ctx.state === "suspended") AU.ctx.resume(); return; }
+    var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    AU.ctx = new AC(); AU.master = AU.ctx.createGain(); AU.master.gain.value = AU.on ? 0.7 : 0; AU.master.connect(AU.ctx.destination);
+    AU.mus = AU.ctx.createGain(); AU.mus.gain.value = 0.15; AU.mus.connect(AU.master);
+    AU.fx = AU.ctx.createGain(); AU.fx.gain.value = 0.55; AU.fx.connect(AU.master);
+    startMusic();
+  }
+  function sfx(k) {
+    if (!AU.ctx || !AU.on) return; var t = AU.ctx.currentTime;
+    if (k === "ok") [523, 659, 784].forEach(function (f, i) { tone(f, t + i * 0.09, 0.28, "triangle", 0.35); });
+    else if (k === "bad") tone(200, t, 0.28, "sawtooth", 0.16, null, 130);
+    else if (k === "click") tone(660, t, 0.08, "square", 0.07);
+    else if (k === "door") { tone(110, t, 0.35, "sawtooth", 0.14, null, 70); tone(80, t + 0.05, 0.3, "square", 0.07); }
+    else if (k === "step") tone(90 + Math.random() * 30, t, 0.07, "triangle", 0.12, null, 50);
+    else if (k === "level") [523, 659, 784, 1047].forEach(function (f, i) { tone(f, t + i * 0.12, 0.4, "triangle", 0.35); });
+    else if (k === "done") [392, 523, 659, 784, 1047].forEach(function (f, i) { tone(f, t + i * 0.1, 0.5, "sine", 0.35); });
+    else if (k === "beep") tone(1000, t, 0.09, "sine", 0.08);
+  }
+  function syncSnd() { var tx = "♪ Sonido: " + (AU.on ? "sí" : "no"); document.querySelectorAll(".snd").forEach(function (b) { b.textContent = tx; }); }
+  function setSound(on) { AU.on = on; try { localStorage.setItem("ob3d-sound", on ? "on" : "off"); } catch (e) {} if (AU.master) AU.master.gain.value = on ? 0.7 : 0; syncSnd(); }
+  document.querySelectorAll(".snd").forEach(function (b) { b.addEventListener("click", function () { audioInit(); setSound(!AU.on); }); });
+  syncSnd(); document.addEventListener("pointerdown", audioInit, { once: true });
+  setInterval(function () { if (state.started && !state.pause && player.z < -2) sfx("beep"); }, 1100);
+
+  if (!window.THREE) { $("fatal").hidden = false; $("start").hidden = true; return; }
+  var THREE = window.THREE;
+  var container = $("game");
+  var renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true });
+  } catch (e) { $("fatal").hidden = false; $("start").hidden = true; return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  var scene = new THREE.Scene();
+  scene.background = canvasTex(8, 256, function (g, W, H) { var gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "#6FB6E8"); gr.addColorStop(0.55, "#BFE3F0"); gr.addColorStop(1, "#FFF1D6"); g.fillStyle = gr; g.fillRect(0, 0, W, H); });
+  scene.fog = new THREE.Fog(0xBFE3F0, 70, 170);
+  var camera = new THREE.PerspectiveCamera(58, 1, 0.1, 260);
+
+  scene.add(new THREE.AmbientLight(0xFFF4E6, 0.42));
+  scene.add(new THREE.HemisphereLight(0xCFEFFF, 0xC9B79A, 0.5));
+  var sun = new THREE.DirectionalLight(0xFFE9C4, 0.95);
+  sun.position.set(14, 30, 18);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left = -34; sun.shadow.camera.right = 34; sun.shadow.camera.top = 34; sun.shadow.camera.bottom = -34;
+  sun.shadow.camera.near = 1; sun.shadow.camera.far = 90;
+  sun.shadow.bias = -0.0006;
+  scene.add(sun);
+
+  function resize() {
+    var w = container.clientWidth || 800, h = container.clientHeight || 500;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(container);
+  window.addEventListener("resize", resize);
+  resize();
+
+  var geoCache = {}, matCache = {};
+  function geo(w, h, d) { var k = w + "|" + h + "|" + d; return geoCache[k] || (geoCache[k] = new THREE.BoxGeometry(w, h, d)); }
+  function mat(c, o) { var k = c + (o ? JSON.stringify(o) : ""); return matCache[k] || (matCache[k] = new THREE.MeshLambertMaterial(Object.assign({ color: c }, o || {}))); }
+
+  var colliders = [], blockers = [];
+  function addCol(x1, x2, z1, z2, active) { var c = { x1: x1, x2: x2, z1: z1, z2: z2, active: active !== false }; colliders.push(c); return c; }
+
+  /* box: y es la altura de la base. o: {col, block, parent, mat, shadow} */
+  function box(w, h, d, c, x, y, z, o) {
+    o = o || {};
+    var m = new THREE.Mesh(geo(w, h, d), o.mat || mat(c));
+    m.position.set(x, y + h / 2, z);
+    m.castShadow = o.shadow === undefined ? h > 0.6 : o.shadow;
+    m.receiveShadow = true;
+    (o.parent || scene).add(m);
+    if (o.col) addCol(x - w / 2, x + w / 2, z - d / 2, z + d / 2);
+    if (o.block) blockers.push(m);
+    return m;
+  }
+  function canvasTex(w, h, draw) {
+    var cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+    draw(cv.getContext("2d"), w, h);
+    var t = new THREE.CanvasTexture(cv); t.anisotropy = 4; return t;
+  }
+  function signPlane(text, w, h, x, y, z, rotY, bg, fg) {
+    var tex = canvasTex(512, Math.round(512 * h / w), function (g, W, H) {
+      g.fillStyle = bg; g.fillRect(0, 0, W, H);
+      g.strokeStyle = "rgba(255,255,255,0.55)"; g.lineWidth = 6; g.strokeRect(8, 8, W - 16, H - 16);
+      var fs = Math.floor(H * 0.46);
+      g.font = "700 " + fs + "px 'Public Sans', Arial, sans-serif";
+      while (g.measureText(text).width > W - 40 && fs > 14) { fs -= 2; g.font = "700 " + fs + "px 'Public Sans', Arial, sans-serif"; }
+      g.fillStyle = fg; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(text, W / 2, H / 2 + 2);
+    });
+    var m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
+    m.position.set(x, y, z); m.rotation.y = rotY; scene.add(m); return m;
+  }
+
+  /* ---------- Entorno: suelo, árboles ---------- */
+  var ground = new THREE.Mesh(new THREE.PlaneGeometry(260, 260), new THREE.MeshLambertMaterial({ color: 0x93CF8A }));
+  ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; ground.receiveShadow = true; scene.add(ground);
+  box(7, 0.04, 36, 0xD9DFE2, 0, 0, 30, { shadow: false });
+  box(26, 0.04, 6, 0xD9DFE2, 0, 0, 17, { shadow: false });
+  var tileTex = canvasTex(128, 128, function (g, W, H) {
+    g.fillStyle = "#E4ECEE"; g.fillRect(0, 0, W, H);
+    g.fillStyle = "#D2DEE2"; g.fillRect(0, 0, W / 2, H / 2); g.fillRect(W / 2, H / 2, W / 2, H / 2);
+  });
+  tileTex.wrapS = tileTex.wrapT = THREE.RepeatWrapping; tileTex.repeat.set(18, 12);
+  var floor = new THREE.Mesh(new THREE.PlaneGeometry(36, 24), new THREE.MeshLambertMaterial({ map: tileTex }));
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 0); floor.receiveShadow = true; scene.add(floor);
+
+  function tree(x, z) {
+    box(0.4, 1.5, 0.4, 0x8A5A3B, x, 0, z, { col: 1 });
+    box(2.0, 1.2, 2.0, 0x4FAE5A, x, 1.4, z); box(1.5, 1.0, 1.5, 0x5CBF66, x, 2.5, z); box(0.9, 0.8, 0.9, 0x6CCF74, x, 3.4, z);
+  }
+  [[-9, 20], [9, 20], [-14, 24], [14, 24], [-22, 14], [22, 14], [-24, 0], [24, 0], [-22, -16], [22, -16], [-8, 34], [8, 34], [0, -18], [-12, -18], [12, -18]].forEach(function (p) { tree(p[0], p[1]); });
+
+  /* ---------- Edificio: paredes ---------- */
+  var WALL_C = 0xF3F7F8, WALL_H = 3.2, WT = 0.3;
+  function wallX(x, z1, z2) { box(WT, WALL_H, z2 - z1, WALL_C, x, 0, (z1 + z2) / 2, { col: 1, block: 1 }); }
+  function wallZ(z, x1, x2, gaps) {
+    var segs = [], cur = x1;
+    gaps = (gaps || []).slice().sort(function (a, b) { return a.cx - b.cx; });
+    gaps.forEach(function (g) { segs.push([cur, g.cx - g.hw]); cur = g.cx + g.hw; });
+    segs.push([cur, x2]);
+    segs.forEach(function (s) { if (s[1] - s[0] > 0.01) box(s[1] - s[0], WALL_H, WT, WALL_C, (s[0] + s[1]) / 2, 0, z, { col: 1, block: 1 }); });
+    gaps.forEach(function (g) { box(g.hw * 2, WALL_H - g.h, WT, WALL_C, g.cx, g.h, z, { block: 1 }); });
+  }
+  var DOORX = [-13.5, -4.5, 4.5, 13.5];
+  function nGap(cx) { return { cx: cx, hw: 0.8, h: 2.5 }; }
+  wallZ(-12, -18.15, 18.15);
+  wallZ(12, -18.15, 18.15, [{ cx: 0, hw: 1.5, h: 2.6 }]);
+  wallX(-18, -12, 12); wallX(18, -12, 12);
+  wallX(-9, -12, -2); wallX(0, -12, -2); wallX(9, -12, -2);
+  wallZ(-2, -18, 18, DOORX.map(nGap));
+  wallZ(2, -18, -9, [nGap(-13.5)]);
+  wallZ(2, 9, 18, [nGap(13.5)]);
+  wallX(-9, 2, 12); wallX(9, 2, 12);
+
+  /* ---------- Salas: pisos y acentos ---------- */
+  var ROOMS = [
+    { id: "consultorio", name: "Consultorio prenatal", x1: -18, x2: -9, z1: -12, z2: -2, floor: 0xCDEBE0, accent: 0x3FAE8C, map: "#5CC0A2" },
+    { id: "eco", name: "Ecografía", x1: -9, x2: 0, z1: -12, z2: -2, floor: 0xC4D5EA, accent: 0x4A78B8, map: "#6F9AD2", req: "M1" },
+    { id: "partos", name: "Sala de partos", x1: 0, x2: 9, z1: -12, z2: -2, floor: 0xF4D3DC, accent: 0xC85A7C, map: "#E58AA6", req: "M2" },
+    { id: "neo", name: "Neonatología", x1: 9, x2: 18, z1: -12, z2: -2, floor: 0xFBEDB9, accent: 0xD9A227, map: "#EDC55A", req: "M3" },
+    { id: "aula", name: "Aula de obstetricia", x1: -18, x2: -9, z1: 2, z2: 12, floor: 0xDCD5F1, accent: 0x7B68B5, map: "#9E8FD6" },
+    { id: "puer", name: "Puerperio", x1: 9, x2: 18, z1: 2, z2: 12, floor: 0xF9DCC8, accent: 0xE08A52, map: "#F0A878", req: "M1" }
+  ];
+  ROOMS.forEach(function (r) {
+    var w = r.x2 - r.x1 - 0.3, d = r.z2 - r.z1 - 0.3, cx = (r.x1 + r.x2) / 2, cz = (r.z1 + r.z2) / 2;
+    box(w, 0.03, d, r.floor, cx, 0, cz, { shadow: false });
+    // franja de color en la pared del fondo
+    var zb = r.z1 < 0 ? r.z1 + 0.17 : r.z2 - 0.17;
+    box(w, 1.1, 0.04, r.accent, cx, 0.9, zb, { shadow: false });
+  });
+
+  /* ---------- Iluminación interior ---------- */
+  ROOMS.concat([{ x1: -18, x2: 0, z1: -2, z2: 2, accent: 0xE4F4F6 }, { x1: 0, x2: 18, z1: -2, z2: 2, accent: 0xE4F4F6 }, { x1: -9, x2: 9, z1: 2, z2: 12, accent: 0xFFF1DC }]).forEach(function (r) {
+    var cx = (r.x1 + r.x2) / 2, cz = (r.z1 + r.z2) / 2;
+    r.pl = new THREE.PointLight(r.accent, 0.6, 14, 1.6); r.pl.position.set(cx, 2.9, cz); scene.add(r.pl);
+    var n = Math.max(1, Math.round((r.x2 - r.x1) / 6));
+    for (var i = 0; i < n; i++) box(1.4, 0.05, 0.5, 0xFFFFFF, r.x1 + (i + 0.5) * (r.x2 - r.x1) / n, 3.12, cz, { mat: new THREE.MeshBasicMaterial({ color: 0xFFF8E0 }), shadow: false });
+  });
+  var beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 3, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xFFC857, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }));
+  var ring = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.75, 32), new THREE.MeshBasicMaterial({ color: 0xFFC857, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false }));
+  var beaconG = new THREE.Group(), bl = new THREE.PointLight(0xFFC857, 0.9, 6);
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.06; beacon.position.y = 1.5; bl.position.y = 1.2; beaconG.add(beacon); beaconG.add(ring); beaconG.add(bl); beaconG.visible = false; scene.add(beaconG);
+
+  /* ---------- Puertas ---------- */
+  var DOORS = [
+    { id: "consultorio", x: -13.5, z: -2, sw: 1, req: null, color: 0x3FAE8C, name: "Consultorio prenatal", lockMsg: "" },
+    { id: "eco", x: -4.5, z: -2, sw: 1, req: "M1", color: 0x4A78B8, name: "Sala de ecografía", lockMsg: "Sala de ecografía cerrada. Requiere completar la Primera consulta prenatal." },
+    { id: "partos", x: 4.5, z: -2, sw: 1, req: "M2", color: 0xC85A7C, name: "Sala de partos", lockMsg: "Sala de partos: área restringida. Requiere autorización tras completar la Ecografía obstétrica." },
+    { id: "neo", x: 13.5, z: -2, sw: 1, req: "M3", color: 0xD9A227, name: "Neonatología", lockMsg: "Neonatología: área restringida. Requiere autorización tras completar las Etapas del trabajo de parto." },
+    { id: "aula", x: -13.5, z: 2, sw: -1, req: null, color: 0x7B68B5, name: "Aula de obstetricia", lockMsg: "" },
+    { id: "puer", x: 13.5, z: 2, sw: -1, req: "M1", color: 0xE08A52, name: "Habitación de puerperio", lockMsg: "Habitación de puerperio cerrada. Requiere completar la Primera consulta prenatal." }
+  ];
+  function isLocked(d) { return !!(d.req && !state.done[d.req]); }
+  DOORS.forEach(function (d) {
+    var pivot = new THREE.Group(); pivot.position.set(d.x - 0.8, 0, d.z); scene.add(pivot);
+    box(1.56, 2.5, 0.1, d.color, 0.8, 0, 0, { parent: pivot, block: 1, shadow: false });
+    box(0.08, 0.2, 0.18, 0xF2C94C, 1.4, 1.0, 0, { parent: pivot, shadow: false });
+    d.pivot = pivot; d.angle = 0; d.open = false;
+    d.openAngle = d.sw * Math.PI / 2 * 0.97;
+    d.col = addCol(d.x - 0.8, d.x + 0.8, d.z - 0.07, d.z + 0.07, true);
+    var sy = d.sw === 1 ? d.z + 0.17 : d.z - 0.17;
+    signPlane(d.name, 2.0, 0.42, d.x, 2.86, sy, d.sw === 1 ? 0 : Math.PI, "#" + ("000000" + d.color.toString(16)).slice(-6), "#ffffff");
+    d.lightMat = new THREE.MeshBasicMaterial({ color: 0xE5484D });
+    var lm = new THREE.Mesh(geo(0.14, 0.14, 0.06), d.lightMat);
+    lm.position.set(d.x + 1.1, 2.3, d.z + (d.sw === 1 ? 0.18 : -0.18)); scene.add(lm);
+  });
+  function refreshDoorLights() { DOORS.forEach(function (d) { d.lightMat.color.setHex(isLocked(d) ? 0xE5484D : 0x3CCB7E); }); ROOMS.forEach(function (r) { if (r.pl) r.pl.intensity = r.req && !state.done[r.req] ? 0.1 : 0.6; }); }
+
+  /* Puerta principal automática */
+  var mainDoor = { p: 0, panels: [] };
+  (function () {
+    var gm = mat(0xBFE7F2, { transparent: true, opacity: 0.45 });
+    [-0.75, 0.75].forEach(function (x) { mainDoor.panels.push(box(1.5, 2.55, 0.06, 0xBFE7F2, x, 0, 12.2, { mat: gm, shadow: false })); });
+    mainDoor.col = addCol(-1.5, 1.5, 11.85, 12.15, true);
+  })();
+
+  /* Fachada: toldo, columnas y letrero */
+  box(8, 0.2, 3.6, 0xE8EEF0, 0, 2.85, 13.8, { shadow: true });
+  box(0.3, 2.85, 0.3, 0xE8EEF0, -3.7, 0, 15.4, { col: 1 }); box(0.3, 2.85, 0.3, 0xE8EEF0, 3.7, 0, 15.4, { col: 1 });
+  (function () {
+    var tex = canvasTex(1024, 160, function (g, W, H) {
+      g.fillStyle = "#0B6E74"; g.fillRect(0, 0, W, H);
+      g.fillStyle = "#fff"; g.font = "800 72px 'Bricolage Grotesque', Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillText("Hospital Materno Infantil", W / 2, H / 2 + 4);
+    });
+    var side = mat(0x0B6E74);
+    var m = new THREE.Mesh(geo(8.4, 1.3, 0.2), [side, side, side, side, new THREE.MeshBasicMaterial({ map: tex }), side]);
+    m.position.set(0, 3.2 + 0.65, 12.0); scene.add(m);
+  })();
+
+  /* =====================================================================
+     MOBILIARIO
+     ===================================================================== */
+  function rotOf(f) { return f === "n" ? Math.PI : f === "e" ? Math.PI / 2 : f === "w" ? -Math.PI / 2 : 0; }
+  function table(x, z, w, d, h, c, lc) {
+    box(w, 0.08, d, c, x, h - 0.08, z, { col: 1, shadow: true });
+    var lx = w / 2 - 0.08, lz = d / 2 - 0.08;
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (s) { box(0.07, h - 0.08, 0.07, lc || 0x8A99A0, x + s[0] * lx, 0, z + s[1] * lz, { shadow: false }); });
+  }
+  function chair(x, z, f, c) {
+    c = c || 0x4A6A78;
+    box(0.5, 0.06, 0.5, c, x, 0.44, z, { shadow: false });
+    box(0.05, 0.44, 0.05, 0x8A99A0, x, 0, z, { shadow: false });
+    var bx = f === "e" ? -0.23 : f === "w" ? 0.23 : 0, bz = f === "s" ? -0.23 : f === "n" ? 0.23 : 0;
+    var horiz = (f === "n" || f === "s");
+    box(horiz ? 0.5 : 0.05, 0.5, horiz ? 0.05 : 0.5, c, x + bx, 0.5, z + bz, { shadow: false });
+  }
+  function monitor(x, y, z, f) {
+    var g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = rotOf(f); scene.add(g);
+    box(0.2, 0.04, 0.2, 0x334047, 0, 0, 0, { parent: g, shadow: false });
+    box(0.05, 0.16, 0.05, 0x334047, 0, 0.04, 0, { parent: g, shadow: false });
+    box(0.56, 0.36, 0.04, 0x1E2A30, 0, 0.2, 0, { parent: g, shadow: false });
+    box(0.5, 0.3, 0.02, 0x72DCF0, 0, 0.23, 0.025, { parent: g, mat: new THREE.MeshBasicMaterial({ color: 0x72DCF0 }), shadow: false });
+    box(0.36, 0.02, 0.13, 0x2A363C, 0, 0.0, 0.28, { parent: g, shadow: false });
+  }
+  function bed(x, z, w, d, frame, sheet, pillowAtNorth) {
+    box(w, 0.4, d, 0x8FA3AB, x, 0.12, z, { col: 1, shadow: true });
+    box(w - 0.06, 0.18, d - 0.06, sheet, x, 0.52, z, { shadow: true });
+    box(w - 0.2, 0.1, 0.4, 0xFFFFFF, x, 0.7, z + (pillowAtNorth ? -d / 2 + 0.35 : d / 2 - 0.35), { shadow: false });
+    box(w, 0.2, 0.08, frame, x, 0.5, z + (pillowAtNorth ? -d / 2 : d / 2), { shadow: false });
+  }
+  function plant(x, z) {
+    box(0.4, 0.4, 0.4, 0xB86B4B, x, 0, z, { col: 1, shadow: false });
+    box(0.55, 0.45, 0.55, 0x3E9A52, x, 0.4, z, { shadow: false }); box(0.35, 0.4, 0.35, 0x56B368, x, 0.8, z, { shadow: false });
+  }
+  function cabinet(x, z, w, d, h, c) { box(w, h, d, c || 0xDDE7EA, x, 0, z, { col: 1, shadow: true }); box(w * 0.92, 0.04, d * 0.92, 0x9FB3BA, x, h, z, { shadow: false }); }
+  function incubator(x, z) {
+    box(1.0, 0.85, 0.7, 0xF3F7F8, x, 0, z, { col: 1, shadow: true });
+    box(0.9, 0.4, 0.6, 0xBFE7F2, x, 0.85, z, { mat: mat(0xBFE7F2, { transparent: true, opacity: 0.35 }), shadow: false });
+    box(0.5, 0.12, 0.22, 0xF6C6A8, x, 0.9, z, { shadow: false });
+    box(0.55, 0.1, 0.3, 0xF4A7C0, x, 0.88, z + 0.04, { shadow: false });
+  }
+  function whiteboard(x, y, z, w, h, rotY) {
+    var tex = canvasTex(640, 300, function (g, W, H) {
+      g.fillStyle = "#F8FBFC"; g.fillRect(0, 0, W, H);
+      g.fillStyle = "#0B6E74"; g.font = "700 34px 'Public Sans', Arial, sans-serif"; g.textAlign = "left"; g.fillText("Embarazo y salud reproductiva", 24, 52);
+      g.fillStyle = "#33474F"; g.font = "500 26px 'Public Sans', Arial, sans-serif";
+      g.fillText("Fecundación: trompa de Falopio", 24, 110); g.fillText("Implantación: endometrio", 24, 150);
+      g.fillText("Embarazo a término: ~40 semanas desde la FUR", 24, 190);
+      g.fillText("Prueba de embarazo: detecta hCG", 24, 230);
+      g.strokeStyle = "#C85A7C"; g.lineWidth = 4; g.beginPath(); g.arc(560, 150, 48, 0, Math.PI * 2); g.stroke();
+    });
+    var m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
+    m.position.set(x, y, z); m.rotation.y = rotY; scene.add(m);
+  }
+
+  /* ---------- Vestíbulo / recepción ---------- */
+  box(5, 1.05, 1, 0x4A8FA3, 5.5, 0, 5.2, { col: 1, shadow: true });
+  box(5.2, 0.08, 1.2, 0xF3F7F8, 5.5, 1.05, 5.2, { shadow: false });
+  signPlane("Recepción", 2.2, 0.5, 5.5, 0.62, 5.72, 0, "#2E6F83", "#ffffff");
+  monitor(5.9, 1.13, 5.1, "s");
+  chair(5.5, 3.4, "s", 0x2E6F83);
+  for (var ci = 0; ci < 5; ci++) chair(-7.6, 4.5 + ci * 1.05, "e", 0x4A8FA3);
+  plant(-8.3, 11.2); plant(8.3, 11.2); plant(8.3, 2.7); plant(-8.3, 2.7); plant(-17.3, 0); plant(17.3, 0);
+  signPlane("Directorio: consultorio, ecografía, partos, neonatología, puerperio, aula", 3.6, 0.9, 8.83, 1.7, 8.0, -Math.PI / 2, "#2E6F83", "#ffffff");
+
+  /* ---------- Consultorio prenatal ---------- */
+  table(-16.6, -10.4, 2.4, 0.9, 0.75, 0xD9C7A8); monitor(-16.0, 0.75, -10.4, "s"); chair(-16.6, -11.3, "s", 0x2E6F83);
+  chair(-15.8, -9.2, "n"); chair(-17.0, -9.2, "n");
+  bed(-10.3, -7.5, 0.95, 2.1, 0x2F6FB0, 0xFFFFFF, true);
+  box(0.5, 1.2, 0.5, 0xDDE7EA, -16.9, 0, -4.6, { col: 1, shadow: true }); box(0.4, 0.08, 0.4, 0x6B7B82, -16.9, 1.2, -4.6, { shadow: false });
+  box(0.06, 1.3, 0.06, 0x8A99A0, -11.4, 0, -8.8, { col: 1, shadow: false }); box(0.3, 0.2, 0.15, 0x2A363C, -11.4, 1.3, -8.8, { shadow: false });
+  cabinet(-17.55, -7.2, 0.6, 2.2, 1.8); plant(-10.0, -3.0);
+
+  /* ---------- Ecografía ---------- */
+  bed(-1.2, -7.0, 0.95, 2.1, 0x4A78B8, 0xFFFFFF, true);
+  (function () {
+    box(0.6, 0.9, 0.6, 0x2E3B42, -2.6, 0, -6.4, { col: 1, shadow: true });
+    var g = new THREE.Group(); g.position.set(-2.6, 0.95, -6.4); g.rotation.y = -Math.PI / 2; scene.add(g);
+    box(0.06, 0.3, 0.06, 0x2E3B42, 0, 0, 0, { parent: g, shadow: false });
+    box(0.6, 0.4, 0.05, 0x1E2A30, 0, 0.3, 0, { parent: g, shadow: false });
+    box(0.54, 0.34, 0.02, 0x72DCF0, 0, 0.33, 0.035, { parent: g, mat: new THREE.MeshBasicMaterial({ color: 0x9BE8F5 }), shadow: false });
+    box(0.08, 0.3, 0.08, 0xD0DCE0, -2.9, 0.6, -6.1, { shadow: false });
+  })();
+  table(-6.5, -10.6, 2.2, 0.9, 0.75, 0xD9C7A8); monitor(-6.0, 0.75, -10.6, "s"); chair(-6.5, -11.4, "s", 0x4A78B8);
+  cabinet(-8.55, -7.0, 0.6, 2.4, 1.6); plant(-0.7, -3.0); chair(-7.4, -5.6, "e");
+
+  /* ---------- Sala de partos ---------- */
+  box(1.3, 0.4, 2.3, 0x8FA3AB, 2.4, 0.15, -8.0, { col: 1, shadow: true });
+  box(1.2, 0.2, 1.4, 0xFFFFFF, 2.4, 0.55, -8.5, { shadow: true });
+  box(1.2, 0.5, 0.9, 0xF4D3DC, 2.4, 0.55, -7.2, { shadow: true });
+  box(0.9, 0.1, 0.4, 0xFFFFFF, 2.4, 0.7, -9.0, { shadow: false });
+  box(0.06, 1.3, 0.06, 0x8A99A0, 0.9, 0, -5.8, { col: 1, shadow: false }); box(0.5, 0.4, 0.1, 0x1E2A30, 0.9, 1.3, -5.8, { shadow: false }); box(0.44, 0.32, 0.02, 0x9BE8A5, 0.9, 1.34, -5.74, { mat: new THREE.MeshBasicMaterial({ color: 0x9BE8A5 }), shadow: false });
+  box(1.0, 0.8, 0.7, 0xF3F7F8, 7.6, 0, -10.3, { col: 1, shadow: true }); box(1.1, 0.12, 0.8, 0xFFB86B, 7.6, 1.3, -10.3, { shadow: false }); box(0.06, 0.5, 0.06, 0x8A99A0, 7.6, 0.8, -10.3, { shadow: false });
+  cabinet(8.55, -7.0, 0.6, 2.6, 1.0); plant(8.2, -2.9);
+
+  /* ---------- Neonatología ---------- */
+  incubator(11.2, -10.6); incubator(13.5, -10.6); incubator(15.8, -10.6);
+  box(0.9, 0.5, 0.6, 0xBFE7F2, 16.9, 0.4, -6.5, { col: 1, shadow: true }); box(0.7, 0.2, 0.4, 0xF4A7C0, 16.9, 0.9, -6.5, { shadow: false });
+  cabinet(17.55, -4.0, 0.6, 1.6, 1.0); plant(9.8, -2.9);
+
+  /* ---------- Puerperio ---------- */
+  bed(16.9, 5.2, 0.95, 2.1, 0xE08A52, 0xFFFFFF, true);
+  bed(16.9, 9.3, 0.95, 2.1, 0xE08A52, 0xFFFFFF, true);
+  box(0.8, 0.5, 0.5, 0xBFE7F2, 14.6, 0.4, 9.6, { col: 1, shadow: true }); box(0.6, 0.2, 0.34, 0xF4A7C0, 14.6, 0.9, 9.6, { shadow: false });
+  chair(10.2, 7.0, "e"); plant(9.8, 3.0);
+
+  /* ---------- Aula de obstetricia ---------- */
+  whiteboard(-13.5, 1.7, 11.78, 5, 1.4, Math.PI);
+  table(-16.2, 5.6, 1.6, 0.7, 0.75, 0xD9C7A8); chair(-16.2, 6.4, "n", 0x7B68B5);
+  table(-10.8, 5.6, 1.6, 0.7, 0.75, 0xD9C7A8); chair(-10.8, 6.4, "n", 0x7B68B5);
+  table(-16.2, 8.0, 1.6, 0.7, 0.75, 0xD9C7A8); chair(-16.2, 8.8, "n", 0x7B68B5);
+  table(-10.8, 8.0, 1.6, 0.7, 0.75, 0xD9C7A8); chair(-10.8, 8.8, "n", 0x7B68B5);
+  table(-13.5, 10.6, 1.8, 0.8, 0.85, 0xE9DDF7);
+  box(0.5, 0.3, 0.4, 0xF2A3B8, -13.5, 0.93, 10.6, { shadow: false }); box(0.3, 0.3, 0.3, 0xE8718F, -13.5, 1.2, 10.6, { shadow: false });
+  box(0.22, 0.08, 0.1, 0xF8D2A0, -13.95, 1.3, 10.6, { shadow: false }); box(0.22, 0.08, 0.1, 0xF8D2A0, -13.05, 1.3, 10.6, { shadow: false });
+  plant(-17.3, 3.0);
+
+  /* =====================================================================
+     AVATARES CÚBICOS
+     ===================================================================== */
+  var faceCache = {};
+  function hexCss(n) { return "#" + ("000000" + n.toString(16)).slice(-6); }
+  function faceTex(skin, emote) {
+    var k = skin + emote;
+    if (faceCache[k]) return faceCache[k];
+    faceCache[k] = canvasTex(64, 64, function (g) {
+      g.fillStyle = hexCss(skin); g.fillRect(0, 0, 64, 64);
+      g.fillStyle = "#1D2B2F";
+      g.fillRect(14, 26, 9, 9); g.fillRect(41, 26, 9, 9);
+      g.fillStyle = "#fff"; g.fillRect(14, 26, 3, 3); g.fillRect(41, 26, 3, 3);
+      g.fillStyle = "#1D2B2F"; g.strokeStyle = "#1D2B2F"; g.lineWidth = 3;
+      if (emote === "worried") {
+        g.beginPath(); g.moveTo(11, 21); g.lineTo(25, 17); g.moveTo(39, 17); g.lineTo(53, 21); g.stroke();
+        g.beginPath(); g.moveTo(24, 50); g.quadraticCurveTo(32, 44, 40, 50); g.stroke();
+      } else if (emote === "smile") {
+        g.beginPath(); g.moveTo(20, 44); g.quadraticCurveTo(32, 56, 44, 44); g.stroke();
+      } else {
+        g.beginPath(); g.moveTo(24, 48); g.lineTo(40, 48); g.stroke();
+      }
+    });
+    return faceCache[k];
+  }
+
+  function makeAvatar(o) {
+    var g = new THREE.Group();
+    var mTop = new THREE.MeshLambertMaterial({ color: o.top }), mBot = new THREE.MeshLambertMaterial({ color: o.bottom });
+    var mSkin = new THREE.MeshLambertMaterial({ color: o.skin }), mHair = new THREE.MeshLambertMaterial({ color: o.hair }), mShoe = new THREE.MeshLambertMaterial({ color: 0xF4F6F7 });
+    var cast = !!o.cast;
+    function part(w, h, d, m, x, y, z, parent) {
+      var me = new THREE.Mesh(geo(w, h, d), m); me.position.set(x, y, z); me.castShadow = cast; (parent || g).add(me); return me;
+    }
+    function pivot(x, y) { var p = new THREE.Group(); p.position.set(x, y, 0); g.add(p); return p; }
+    var legL = pivot(-0.14, 0.72), legR = pivot(0.14, 0.72);
+    [legL, legR].forEach(function (p) { part(0.25, 0.62, 0.27, mBot, 0, -0.31, 0, p); part(0.27, 0.1, 0.34, mShoe, 0, -0.67, 0.03, p); });
+    part(0.62, 0.72, 0.34, mTop, 0, 1.08, 0);
+    var armL = pivot(-0.42, 1.38), armR = pivot(0.42, 1.38);
+    [armL, armR].forEach(function (p) { part(0.21, 0.38, 0.23, mTop, 0, -0.19, 0, p); part(0.19, 0.3, 0.21, mSkin, 0, -0.52, 0, p); });
+    var faceMat = new THREE.MeshLambertMaterial({ map: faceTex(o.skin, "neutral") });
+    var head = new THREE.Mesh(geo(0.46, 0.46, 0.46), [mSkin, mSkin, mSkin, mSkin, faceMat, mSkin]);
+    head.position.set(0, 1.69, 0); head.castShadow = cast; g.add(head);
+    part(0.5, 0.12, 0.5, mHair, 0, 1.96, 0); part(0.5, 0.46, 0.1, mHair, 0, 1.76, -0.2);
+    part(0.06, 0.2, 0.46, mHair, -0.24, 1.84, 0); part(0.06, 0.2, 0.46, mHair, 0.24, 1.84, 0);
+    if (o.long) { part(0.52, 0.8, 0.12, mHair, 0, 1.4, -0.24); part(0.08, 0.5, 0.3, mHair, -0.27, 1.5, -0.06); part(0.08, 0.5, 0.3, mHair, 0.27, 1.5, -0.06); }
+    part(0.12, 0.16, 0.03, new THREE.MeshLambertMaterial({ color: 0xFFFFFF }), 0.17, 1.22, 0.18);
+    if (o.pregnant) part(0.5, 0.42, 0.3, mTop, 0, 0.98, 0.27);
+    g.userData = { legL: legL, legR: legR, armL: armL, armR: armR, head: head, faceMat: faceMat, skin: o.skin, mTop: mTop, mBot: mBot, emote: "neutral" };
+    return g;
+  }
+  function setEmoteOn(av, e) { var u = av.userData; if (u.emote === e) return; u.emote = e; u.faceMat.map = faceTex(u.skin, e); u.faceMat.needsUpdate = true; }
+  function swing(av, amt, t) {
+    var u = av.userData, s = Math.sin(t * 10) * 0.85 * amt;
+    u.legL.rotation.x = s; u.legR.rotation.x = -s; u.armL.rotation.x = -s * 0.9; u.armR.rotation.x = s * 0.9;
+  }
+
+  var player = { x: 0, z: 21, face: Math.PI, moving: 0, t: 0 };
+  var avatar = makeAvatar({ skin: 0xF1C9A5, hair: 0x3B2A20, top: 0x4FB4DA, bottom: 0x2F86AB, long: true, cast: true });
+  scene.add(avatar);
+  function applyUniform(id) {
+    var u = uniformById(id); state.uniform = id;
+    avatar.userData.mTop.color.setHex(u.top); avatar.userData.mBot.color.setHex(u.bottom);
+  }
+  applyUniform(state.uniform);
+
+  var npcs = {};
+  function addNPC(id, name, x, z, rot, o, emote) {
+    var av = makeAvatar(o); av.position.set(x, 0, z); av.rotation.y = rot; scene.add(av);
+    var n = { id: id, name: name, x: x, z: z, rot: rot, av: av, seed: Math.random() * 6 };
+    addCol(x - 0.32, x + 0.32, z - 0.32, z + 0.32);
+    npcs[id] = n; if (emote) setEmoteOn(av, emote); n.baseEmote = emote || "neutral";
+    return n;
+  }
+  addNPC("marisol", "Marisol", 5.5, 3.9, 0, { skin: 0xE8B98F, hair: 0x2B1D17, top: 0x2E6F83, bottom: 0x24596A, long: true }, "smile");
+  addNPC("elena", "Sra. Elena", -6.2, 7.0, Math.PI / 2, { skin: 0xD9A47C, hair: 0xB9B9BD, top: 0xB07BA8, bottom: 0x5C4A63, long: false }, "neutral");
+  addNPC("camila", "Camila", -14.6, -5.6, Math.PI, { skin: 0xE2B48C, hair: 0x2A1B15, top: 0xF4A7C0, bottom: 0x7A8FB0, long: true, pregnant: true }, "smile");
+  addNPC("valeria", "Valeria", 5.9, -6.2, -Math.PI / 2, { skin: 0xDDA982, hair: 0x4A2E1E, top: 0xCDE3F5, bottom: 0xCDE3F5, long: true, pregnant: true }, "worried");
+  addNPC("rosa", "Rosa", 15.5, 5.0, Math.PI / 2, { skin: 0xE7BB95, hair: 0x20150F, top: 0xFBD3A8, bottom: 0xFBD3A8, long: true }, "smile");
+
+  /* =====================================================================
+     ENTRADA Y COLISIONES
+     ===================================================================== */
+  var keys = {}, joy = { x: 0, y: 0 }, touchRun = false;
+  var cam = { yaw: 0, pitch: 0.34, dist: 5.4, cur: 5.4 };
+  var PR = 0.34;
+
+  function collide(p) {
+    for (var it = 0; it < 2; it++) {
+      for (var i = 0; i < colliders.length; i++) {
+        var c = colliders[i]; if (!c.active) continue;
+        var cx = Math.max(c.x1, Math.min(p.x, c.x2)), cz = Math.max(c.z1, Math.min(p.z, c.z2));
+        var dx = p.x - cx, dz = p.z - cz, d2 = dx * dx + dz * dz;
+        if (d2 < PR * PR) {
+          if (d2 > 1e-8) { var d = Math.sqrt(d2); p.x += dx / d * (PR - d); p.z += dz / d * (PR - d); }
+          else {
+            var l = p.x - c.x1, r = c.x2 - p.x, t = p.z - c.z1, b = c.z2 - p.z, m = Math.min(l, r, t, b);
+            if (m === l) p.x = c.x1 - PR; else if (m === r) p.x = c.x2 + PR; else if (m === t) p.z = c.z1 - PR; else p.z = c.z2 + PR;
+          }
+        }
+      }
+    }
+  }
+  function inputLocked() { return !state.started || state.dialog || state.bot || state.pause; }
+
+  function updatePlayer(dt) {
+    var ix = 0, iz = 0;
+    if (!inputLocked()) {
+      if (keys.KeyW || keys.ArrowUp) iz += 1; if (keys.KeyS || keys.ArrowDown) iz -= 1;
+      if (keys.KeyD || keys.ArrowRight) ix += 1; if (keys.KeyA || keys.ArrowLeft) ix -= 1;
+      ix += joy.x; iz += -joy.y;
+    }
+    var len = Math.hypot(ix, iz); if (len > 1) { ix /= len; iz /= len; }
+    var sy = Math.sin(cam.yaw), cy = Math.cos(cam.yaw);
+    var dx = ix * cy + iz * -sy, dz = ix * -sy + iz * -cy;
+    var run = keys.ShiftLeft || keys.ShiftRight || touchRun;
+    var speed = (run ? 5.9 : 3.2) * Math.min(1, len);
+    var moving = len > 0.05;
+    if (moving) {
+      var n = Math.hypot(dx, dz); dx /= n; dz /= n;
+      player.x += dx * speed * dt; collide(player);
+      player.z += dz * speed * dt; collide(player);
+      var target = Math.atan2(dx, dz), diff = target - player.face;
+      while (diff > Math.PI) diff -= Math.PI * 2; while (diff < -Math.PI) diff += Math.PI * 2;
+      player.face += diff * Math.min(1, dt * 14);
+    }
+    player.moving += ((moving ? (run ? 1.25 : 1) : 0) - player.moving) * Math.min(1, dt * 12);
+    player.t += dt * (run ? 1.3 : 1);
+    swing(avatar, player.moving, player.t);
+    var stp = Math.floor(player.t * 10 / Math.PI); if (stp !== updatePlayer.ls) { updatePlayer.ls = stp; if (player.moving > 0.3 && state.started) sfx("step"); }
+    avatar.position.set(player.x, 0, player.z);
+    avatar.rotation.y = player.face;
+    if (!state.entered && player.z < 10.2 && Math.abs(player.x) < 17) { state.entered = true; toast("Bienvenida o bienvenido al Hospital Materno Infantil."); updateObjective(); }
+  }
+
+  var ray = new THREE.Raycaster(), rayO = new THREE.Vector3(), rayD = new THREE.Vector3();
+  function updateCamera(dt) {
+    if (!state.started) {
+      var t = performance.now() / 1000 * 0.12;
+      camera.position.set(Math.sin(t) * 14, 5.2, 27 + Math.cos(t) * 4);
+      camera.lookAt(0, 2, 12); avatar.visible = false; return;
+    }
+    avatar.visible = true;
+    var tx = player.x, ty = 1.55, tz = player.z;
+    var cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    var ddx = Math.sin(cam.yaw) * cp, ddy = sp, ddz = Math.cos(cam.yaw) * cp;
+    var dist = cam.dist;
+    rayO.set(tx, ty, tz); rayD.set(ddx, ddy, ddz); ray.set(rayO, rayD); ray.far = dist + 0.3;
+    var hits = ray.intersectObjects(blockers, false);
+    if (hits.length) dist = Math.max(0.8, hits[0].distance - 0.25);
+    cam.cur += (dist - cam.cur) * Math.min(1, dt * (dist < cam.cur ? 20 : 4));
+    camera.position.set(tx + ddx * cam.cur, Math.max(0.3, ty + ddy * cam.cur), tz + ddz * cam.cur);
+    camera.lookAt(tx, ty, tz);
+    avatar.visible = cam.cur > 1.2;
+  }
+
+  /* =====================================================================
+     INTERACCIONES
+     ===================================================================== */
+  var interactables = [];
+  DOORS.forEach(function (d) {
+    interactables.push({ x: d.x, z: d.z, r: 2.1, kind: "door",
+      label: function () { return isLocked(d) ? "Cerrada con llave" : (d.open ? "Presiona E para cerrar" : "Presiona E para abrir"); },
+      act: function () {
+        if (isLocked(d)) { toast(d.lockMsg); sfx("bad"); return; }
+        if (d.open && Math.abs(player.z - d.z) < 0.95 && Math.abs(player.x - d.x) < 1.1) { toast("Despeja la puerta antes de cerrarla."); return; }
+        d.open = !d.open; d.col.active = !d.open; sfx("door");
+      } });
+  });
+  function npcLabel(id, mid) { return function () { return state.done[mid] ? "Hablar con " + npcs[id].name : "Atender a " + npcs[id].name; }; }
+  interactables.push({ x: 6.9, z: 6.1, r: 1.7, kind: "obj", label: function () { return "Usar el computador de recepción"; }, act: function () { openLesson("R"); } });
+  interactables.push({ x: 4.1, z: 6.1, r: 1.3, kind: "npc", label: function () { return "Hablar con Marisol"; }, act: function () { openLesson("T0"); } });
+  interactables.push({ x: -14.6, z: -5.6, r: 2.1, kind: "npc", label: npcLabel("camila", "M1"), act: function () { openLesson("M1"); } });
+  interactables.push({ x: -3.0, z: -6.4, r: 2.0, kind: "obj", label: function () { return "Usar el ecógrafo"; }, act: function () { openLesson("M2"); } });
+  interactables.push({ x: 5.9, z: -6.2, r: 2.1, kind: "npc", label: npcLabel("valeria", "M3"), act: function () { openLesson("M3"); } });
+  interactables.push({ x: 13.5, z: -9.0, r: 2.6, kind: "obj", label: function () { return "Atender al recién nacido"; }, act: function () { openLesson("M4"); } });
+  interactables.push({ x: 15.5, z: 5.0, r: 2.1, kind: "npc", label: npcLabel("rosa", "M5"), act: function () { openLesson("M5"); } });
+  interactables.push({ x: -13.5, z: 9.8, r: 1.9, kind: "obj", label: function () { return "Estudiar con la maqueta y la pizarra"; }, act: function () { openLesson("M6"); } });
+
+  [["M7", -11.6, -5.8, 1.8, "Evaluar a la gestante en la camilla"], ["M8", -6.5, -9.5, 1.6, "Practicar maniobras de Leopold"], ["M9", 2.4, -6.2, 1.5, "Atender la hemorragia posparto"], ["M10", 11.2, -9.4, 1.6, "Practicar reanimación neonatal"], ["M11", -16.2, 7.2, 1.5, "Analizar el caso de diabetes gestacional"]].forEach(function (a) {
+    interactables.push({ x: a[1], z: a[2], r: a[3], kind: "obj", label: function () { return a[4]; },
+      act: function () { if (!missionAvail(a[0])) { toast("Completa antes el episodio anterior de la historia."); sfx("bad"); return; } openLesson(a[0]); } });
+  });
+  var nearest = null;
+  function updateInteract() {
+    nearest = null;
+    if (!state.started || inputLocked()) { hidePrompt(); return; }
+    var best = 1e9;
+    interactables.forEach(function (it) {
+      var d = Math.hypot(player.x - it.x, player.z - it.z);
+      if (d < it.r && d < best) { best = d; nearest = it; }
+    });
+    var p = $("prompt");
+    if (nearest) {
+      p.hidden = false;
+      $("prompt-key").hidden = nearest.kind === "door";
+      $("prompt-text").textContent = nearest.label();
+    } else p.hidden = true;
+  }
+  function hidePrompt() { $("prompt").hidden = true; }
+  function interact() { if (nearest && !inputLocked()) { var it = nearest; sfx("click"); it.act(); } }
+
+  /* Puertas: animación */
+  function updateDoors(dt) {
+    DOORS.forEach(function (d) {
+      var target = d.open ? d.openAngle : 0;
+      d.angle += (target - d.angle) * Math.min(1, dt * 7);
+      d.pivot.rotation.y = d.angle;
+    });
+    var near = Math.hypot(player.x, player.z - 12) < 4.6 && state.started;
+    mainDoor.p += ((near ? 1 : 0) - mainDoor.p) * Math.min(1, dt * 6);
+    mainDoor.panels[0].position.x = -0.75 - 1.4 * mainDoor.p; mainDoor.panels[1].position.x = 0.75 + 1.4 * mainDoor.p;
+    mainDoor.col.active = mainDoor.p < 0.55;
+  }
+  function updateNPCs(dt, t) {
+    Object.keys(npcs).forEach(function (k) {
+      var n = npcs[k], av = n.av;
+      var d = Math.hypot(player.x - n.x, player.z - n.z);
+      if (state.started && d < 5) {
+        var target = Math.atan2(player.x - n.x, player.z - n.z), diff = target - av.rotation.y;
+        while (diff > Math.PI) diff -= Math.PI * 2; while (diff < -Math.PI) diff += Math.PI * 2;
+        av.rotation.y += diff * Math.min(1, dt * 5);
+      }
+      var u = av.userData; u.armL.rotation.x = Math.sin(t * 1.6 + n.seed) * 0.05; u.armR.rotation.x = -Math.sin(t * 1.6 + n.seed) * 0.05;
+      u.head.rotation.y = Math.sin(t * 0.7 + n.seed) * 0.12;
+    });
+  }
+
+  /* =====================================================================
+     INTERFAZ: XP, OBJETIVO, MAPA, AVISOS
+     ===================================================================== */
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 3600);
+  }
+  function refreshHud() {
+    var lv = levelOf(state.xp), next = LEVELS[lv] === undefined ? null : LEVELS[lv];
+    $("lvlname").textContent = "Nivel " + lv + " · " + LEVEL_NAMES[lv - 1];
+    if (next === null) { $("xptxt").textContent = state.xp + " XP · nivel máximo"; $("xpfill").style.width = "100%"; }
+    else { var base = LEVELS[lv - 1]; $("xptxt").textContent = state.xp + " / " + next + " XP"; $("xpfill").style.width = Math.round((state.xp - base) / (next - base) * 100) + "%"; }
+  }
+  function addXP(n) {
+    if (n <= 0) return;
+    var before = levelOf(state.xp); state.xp += n; var after = levelOf(state.xp);
+    if (after > before) { sfx("level");
+      var un = UNIFORMS.filter(function (u) { return u.lvl === after; }).map(function (u) { return u.name; });
+      toast("¡Subiste al nivel " + after + " · " + LEVEL_NAMES[after - 1] + "!" + (un.length ? " Uniforme desbloqueado: " + un.join(", ") + "." : ""));
+    }
+    save(); refreshHud(); buildSwatches();
+  }
+  function missionAvail(id) {
+    var af = MISSIONS[id] && MISSIONS[id].after; if (af) return !!state.done[af];
+    if (id === "M2") return !!state.done.M1;
+    if (id === "M3") return !!state.done.M2;
+    if (id === "M4") return !!state.done.M3;
+    if (id === "M5") return !!state.done.M1;
+    return true;
+  }
+  var objective = { text: "", x: 0, z: 12, id: null };
+  function updateObjective() {
+    var o;
+    if (!state.entered) o = { text: "Entra al hospital por la puerta principal.", x: 0, z: 12, id: null };
+    else {
+      var m = null;
+      for (var i = 0; i < ORDER.length; i++) if (!state.done[ORDER[i]] && missionAvail(ORDER[i])) { m = ORDER[i]; break; }
+      if (m) {
+        var d = MISSIONS[m];
+        var txt = m === "R" ? "Registra a Camila en el computador de la recepción."
+          : m === "M1" ? "Abre el Consultorio prenatal y atiende a Camila."
+          : m === "M2" ? "Ve a la Sala de ecografía y usa el ecógrafo."
+          : m === "M3" ? "Ve a la Sala de partos y atiende a Valeria."
+          : m === "M4" ? "Ve a Neonatología y atiende al recién nacido."
+          : m === "M5" ? "Visita la habitación de puerperio y habla con Rosa."
+          : (d.obj || "Repasa anatomía en el Aula de obstetricia.");
+        o = { text: txt, x: d.where.x, z: d.where.z, id: m };
+      } else o = { text: "Completaste todas las misiones. Repite lecciones o consulta a OB-Bot.", x: 0, z: 0, id: null };
+    }
+    objective = o; $("objtext").textContent = o.text;
+  }
+
+  /* Mapa */
+  var mm = $("minimap"), mmg = mm.getContext("2d");
+  var MAPB = { x1: -21, x2: 21, z1: -14, z2: 29 };
+  function drawMap() {
+    var W = mm.width, H = mm.height, g = mmg;
+    var big = W > 250;
+    function X(x) { return (x - MAPB.x1) / (MAPB.x2 - MAPB.x1) * W; }
+    function Z(z) { return (z - MAPB.z1) / (MAPB.z2 - MAPB.z1) * H; }
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = "#0D262C"; g.fillRect(0, 0, W, H);
+    g.fillStyle = "#9FB6BB"; g.fillRect(X(-18), Z(-2), X(18) - X(-18), Z(2) - Z(-2)); g.fillRect(X(-9), Z(2), X(9) - X(-9), Z(12) - Z(2));
+    g.fillStyle = "#6E8A91"; g.fillRect(X(-3.5), Z(12), X(3.5) - X(-3.5), Z(29) - Z(12));
+    ROOMS.forEach(function (r) {
+      var locked = r.req && !state.done[r.req];
+      g.fillStyle = locked ? "#3A4C51" : r.map;
+      g.fillRect(X(r.x1) + 1, Z(r.z1) + 1, X(r.x2) - X(r.x1) - 2, Z(r.z2) - Z(r.z1) - 2);
+      if (big) {
+        g.fillStyle = locked ? "#9DB0B4" : "#10282F"; g.font = "600 " + Math.round(W / 34) + "px 'Public Sans', Arial, sans-serif"; g.textAlign = "center";
+        g.fillText(r.name, (X(r.x1) + X(r.x2)) / 2, (Z(r.z1) + Z(r.z2)) / 2);
+        if (locked) g.fillText("(cerrada)", (X(r.x1) + X(r.x2)) / 2, (Z(r.z1) + Z(r.z2)) / 2 + W / 30);
+      }
+    });
+    if (big) {
+      g.fillStyle = "#10282F"; g.font = "600 " + Math.round(W / 34) + "px 'Public Sans', Arial, sans-serif"; g.textAlign = "center";
+      g.fillText("Recepción", X(0), Z(7)); g.fillText("Pasillo", X(0), Z(0.3)); g.fillText("Entrada", X(0), Z(20));
+      g.fillStyle = "#EAF6F5"; g.fillText("Toca el mapa para cerrarlo", W / 2, H - 10);
+    }
+    var pulse = 0.5 + 0.5 * Math.sin(performance.now() / 260);
+    if (state.started) {
+      g.strokeStyle = "#FFC857"; g.lineWidth = 2; g.beginPath(); g.arc(X(objective.x), Z(objective.z), (big ? 9 : 5) + pulse * 4, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = "#FFC857"; g.beginPath(); g.arc(X(objective.x), Z(objective.z), big ? 5 : 3, 0, Math.PI * 2); g.fill();
+    }
+    g.save(); g.translate(X(player.x), Z(player.z)); g.rotate(-player.face + Math.PI);
+    g.fillStyle = "#04211F"; g.strokeStyle = "#47D1C6"; g.lineWidth = 2;
+    var s = big ? 10 : 6; g.beginPath(); g.moveTo(0, -s); g.lineTo(s * 0.8, s); g.lineTo(-s * 0.8, s); g.closePath(); g.fill(); g.stroke(); g.restore();
+  }
+  mm.addEventListener("click", function () {
+    state.bigmap = !state.bigmap;
+    mm.classList.toggle("big", state.bigmap);
+    if (state.bigmap) { mm.width = 380; mm.height = 418; } else { mm.width = 150; mm.height = 165; }
+  });
+
+  /* =====================================================================
+     LECCIONES Y DIÁLOGOS
+     ===================================================================== */
+  var L = null;
+  function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function setEmote(id, e) { if (id && npcs[id]) setEmoteOn(npcs[id].av, e); }
+
+  function drawUS(cv, mode) {
+    var W = cv.width, H = cv.height, g = cv.getContext("2d");
+    g.fillStyle = "#050809"; g.fillRect(0, 0, W, H);
+    g.save(); g.beginPath(); g.moveTo(W / 2, 6); g.arc(W / 2, 6, H - 14, Math.PI * 0.17, Math.PI * 0.83); g.closePath(); g.clip();
+    var gr = g.createRadialGradient(W / 2, 6, 10, W / 2, 6, H); gr.addColorStop(0, "#38444A"); gr.addColorStop(1, "#10171A"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    var seed = 11; function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    for (var i = 0; i < 1500; i++) { g.fillStyle = "rgba(200,215,220," + (0.04 + rnd() * 0.12) + ")"; g.fillRect(rnd() * W, rnd() * H, 1 + rnd() * 2, 1 + rnd() * 2); }
+    g.lineCap = "round";
+    if (mode === "us1") {
+      g.fillStyle = "rgba(0,0,0,0.55)"; g.strokeStyle = "rgba(235,240,242,0.85)"; g.lineWidth = 3;
+      g.beginPath(); g.ellipse(W / 2, H * 0.56, W * 0.21, H * 0.27, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.strokeStyle = "#E8EEF0"; g.lineWidth = 9; g.beginPath(); g.moveTo(W * 0.43, H * 0.66); g.bezierCurveTo(W * 0.43, H * 0.44, W * 0.58, H * 0.42, W * 0.6, H * 0.6); g.stroke();
+      g.fillStyle = "#E8EEF0"; g.beginPath(); g.arc(W * 0.6, H * 0.56, 10, 0, Math.PI * 2); g.fill();
+    } else {
+      g.strokeStyle = "rgba(235,240,242,0.9)"; g.lineWidth = 6; g.beginPath(); g.ellipse(W / 2, H * 0.54, W * 0.2, H * 0.26, 0.2, 0, Math.PI * 2); g.stroke();
+      g.lineWidth = 3; g.beginPath(); g.moveTo(W * 0.5, H * 0.32); g.lineTo(W * 0.52, H * 0.76); g.stroke();
+      g.fillStyle = "rgba(235,240,242,0.3)"; g.beginPath(); g.ellipse(W * 0.5, H * 0.54, W * 0.08, H * 0.1, 0.2, 0, Math.PI * 2); g.fill();
+    }
+    g.restore();
+    g.strokeStyle = "#FFD166"; g.fillStyle = "#FFD166"; g.lineWidth = 1.5; g.setLineDash([4, 3]);
+    g.beginPath();
+    if (mode === "us1") { g.moveTo(W * 0.41, H * 0.68); g.lineTo(W * 0.63, H * 0.58); } else { g.moveTo(W * 0.28, H * 0.66); g.lineTo(W * 0.72, H * 0.42); }
+    g.stroke(); g.setLineDash([]);
+    g.font = "600 13px 'IBM Plex Mono', monospace"; g.textAlign = "left";
+    g.fillText(mode === "us1" ? "LCC 5,4 cm (≈ 12 sem)" : "PC · biometría fetal", 10, 20);
+    g.fillStyle = "rgba(255,255,255,0.65)"; g.font = "500 11px 'IBM Plex Mono', monospace"; g.fillText("Imagen educativa simulada", 10, H - 10);
+  }
+
+  function openLesson(id) {
+    var m = MISSIONS[id]; if (!m) return;
+    L = { id: id, m: m, i: state.done[id] ? 0 : Math.min(lessonProg[id] || 0, m.steps.length - 1), tries: 0, xp: 0, reps: !!state.done[id] && !m.noxp, mode: "", order: [], over: false };
+    state.dialog = true; $("dialog").hidden = false; hidePrompt();
+    renderStep();
+  }
+  function renderStep() {
+    var s = L.m.steps[L.i], n = L.m.steps.length;
+    L.tries = 0; L.over = false;
+    $("dlg-who").textContent = s.who || L.m.npc || "";
+    $("dlg-meta").textContent = L.m.title + (n > 1 ? " · paso " + (L.i + 1) + " de " + n : "") + (L.reps ? " · práctica sin XP" : "");
+    var vis = $("dlg-visual"); vis.innerHTML = ""; vis.hidden = !s.visual;
+    if (s.visual) {
+      if (s.visual.type === "card") {
+        var card = document.createElement("div"); card.className = "vis-card";
+        s.visual.rows.forEach(function (r) {
+          var k = document.createElement("span"); k.className = "k"; k.textContent = r[0];
+          var v = document.createElement("span"); v.className = "v"; v.textContent = r[1]; card.appendChild(k); card.appendChild(v);
+        });
+        vis.appendChild(card);
+      } else {
+        var cv = document.createElement("canvas"); cv.width = 420; cv.height = 250; cv.className = "vis-us"; vis.appendChild(cv); drawUS(cv, s.visual.mode);
+      }
+    }
+    $("dlg-say").textContent = s.say || ""; $("dlg-say").hidden = !s.say;
+    $("dlg-ask").textContent = s.ask || ""; $("dlg-ask").hidden = !s.ask;
+    $("dlg-fb").hidden = true;
+    var box_ = $("dlg-choices"); box_.innerHTML = "";
+    var prim = $("dlg-primary");
+    if (s.c) {
+      L.order = shuffle(s.c); prim.hidden = true;
+      L.order.forEach(function (c, k) {
+        var b = document.createElement("button"); b.type = "button"; b.className = "ch"; b.setAttribute("data-k", k);
+        var l = document.createElement("span"); l.className = "l"; l.textContent = "ABCD".charAt(k);
+        var x = document.createElement("span"); x.className = "x"; x.textContent = c.t; b.appendChild(l); b.appendChild(x); box_.appendChild(b);
+      });
+    } else {
+      L.order = []; prim.hidden = false; prim.textContent = L.i + 1 >= n ? "Terminar" : "Continuar"; L.mode = L.i + 1 >= n ? "finish" : "next";
+    }
+    setEmote(L.m.npcId, s.emote || "neutral");
+    $("dialog").scrollTop = 0;
+  }
+  function onChoice(k) {
+    if (!L || L.over) return;
+    var s = L.m.steps[L.i], c = L.order[k]; if (!c) return;
+    var btns = $("dlg-choices").querySelectorAll(".ch"), prim = $("dlg-primary");
+    var fb = $("dlg-fb"), reply = $("fb-reply");
+    if (c.ok) {
+      L.over = true;
+      sfx("ok"); var gained = 0;
+      if (L.reps === false && !L.m.noxp) { gained = L.tries === 0 ? 15 : 8; L.xp += gained; addXP(gained); }
+      for (var i = 0; i < btns.length; i++) { btns[i].disabled = true; if (L.order[i].ok) btns[i].classList.add("good"); }
+      fb.className = "fb ok"; fb.hidden = false;
+      $("fb-title").textContent = "Correcto" + (gained ? " · +" + gained + " XP" : "");
+      $("fb-text").textContent = c.w;
+      if (s.reply) { reply.hidden = false; reply.textContent = (L.m.npc ? L.m.npc + ": " : "") + "«" + s.reply + "»"; setEmote(L.m.npcId, s.replyEmote || "smile"); } else reply.hidden = true;
+      var last = L.i + 1 >= L.m.steps.length;
+      prim.hidden = false; prim.textContent = last ? "Terminar misión" : "Continuar"; L.mode = last ? "finish" : "next";
+      prim.focus({ preventScroll: true });
+    } else {
+      L.tries++;
+      sfx("bad"); btns[k].disabled = true; btns[k].classList.add("bad");
+      fb.className = "fb no"; fb.hidden = false;
+      $("fb-title").textContent = "Todavía no · OB-Bot explica";
+      $("fb-text").textContent = c.w + " Elige otra opción.";
+      reply.hidden = true; prim.hidden = true;
+    }
+  }
+  function primary() {
+    if (!L) return;
+    if (L.mode === "next") { L.i++; lessonProg[L.id] = L.i; renderStep(); }
+    else if (L.mode === "finish") completeLesson();
+    else if (L.mode === "close") closeLesson();
+  }
+  function completeLesson() {
+    var id = L.id, m = L.m, first = !state.done[id] && !m.noxp;
+    if (m.noxp) { lessonProg[id] = 0; closeLesson(); return; }
+    var bonus = 0, lines = [];
+    if (first) {
+      state.done[id] = true; sfx("done"); bonus = m.bonus || 0; L.xp += bonus; addXP(bonus);
+      (m.unlocks || []).forEach(function (u) { lines.push(u); });
+      refreshDoorLights(); updateObjective();
+    }
+    lessonProg[id] = 0; save();
+    $("dlg-visual").hidden = true; $("dlg-say").hidden = false; $("dlg-ask").hidden = true; $("dlg-choices").innerHTML = ""; $("dlg-fb").hidden = true;
+    $("dlg-who").textContent = m.noxp ? m.title : "Misión completada";
+    $("dlg-say").textContent = m.noxp ? "Cuando quieras, vuelve a hablar conmigo."
+      : first ? "«" + m.title + "»: ganaste " + L.xp + " XP en total (incluye un bono de " + bonus + " XP)." + (lines.length ? " " + lines.join(" ") : "")
+      : "Práctica terminada. Esta misión ya estaba completada, así que no suma XP extra.";
+    var prim = $("dlg-primary"); prim.hidden = false; prim.textContent = "Cerrar"; L.mode = "close"; prim.focus({ preventScroll: true });
+    setEmote(m.npcId, "smile");
+  }
+  function closeLesson() {
+    if (L) { if (L.mode !== "close") lessonProg[L.id] = L.i; setEmote(L.m.npcId, npcs[L.m.npcId] ? npcs[L.m.npcId].baseEmote : "neutral"); }
+    L = null; state.dialog = false; $("dialog").hidden = true; updateObjective(); refreshHud();
+  }
+  $("dlg-exit").addEventListener("click", closeLesson);
+  $("dlg-primary").addEventListener("click", primary);
+  $("dlg-choices").addEventListener("click", function (e) {
+    var b = e.target.closest(".ch"); if (b && !b.disabled) onChoice(parseInt(b.getAttribute("data-k"), 10));
+  });
+
+  /* =====================================================================
+     OB-BOT, PAUSA, UNIFORMES, PANTALLA DE INICIO
+     ===================================================================== */
+  function openBot(html) {
+    state.bot = true; $("bot").hidden = false; hidePrompt();
+    if (html) $("bot-ans").textContent = html;
+  }
+  function closeBot() { state.bot = false; $("bot").hidden = true; }
+  (function buildBot() {
+    var chips = $("bot-chips");
+    var hint = document.createElement("button"); hint.type = "button"; hint.className = "chip"; hint.textContent = "Pista de mi objetivo";
+    hint.addEventListener("click", function () {
+      var h = objective.id ? MISSIONS[objective.id].hint : (state.entered ? "Ya completaste todas las misiones. Repite alguna lección para practicar." : "Camina hacia la puerta principal; se abre sola al acercarte.");
+      $("bot-ans").textContent = h;
+    });
+    chips.appendChild(hint);
+    BOT_TOPICS.forEach(function (t) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = t.k;
+      b.addEventListener("click", function () { $("bot-ans").textContent = t.a; }); chips.appendChild(b);
+    });
+  })();
+  $("btn-bot").addEventListener("click", function () { state.bot ? closeBot() : openBot(); });
+  $("bot-close").addEventListener("click", closeBot);
+  $("btn-instr").addEventListener("click", function () {
+    var m = objective.id ? MISSIONS[objective.id] : null;
+    openBot(m ? "Instrucciones · " + m.title + ": " + m.instr : "Entra al hospital por la puerta principal y camina hasta el vestíbulo. Usa WASD o las flechas para moverte y arrastra con el ratón para girar la cámara.");
+  });
+
+  var KEYS_HTML = [["WASD / flechas", "Moverte"], ["Arrastrar ratón", "Girar cámara"], ["E", "Interactuar"], ["Shift", "Correr"], ["Esc", "Pausa"], ["M", "Mapa grande"], ["N", "Sonido"], ["B", "OB-Bot"], ["1 a 4", "Elegir respuesta"]];
+  function fillKeys(id) {
+    var el = $(id); el.innerHTML = "";
+    KEYS_HTML.forEach(function (k) { var d = document.createElement("div"); d.innerHTML = "<b></b><br><span></span>"; d.firstChild.textContent = k[0]; d.querySelector("span").textContent = k[1]; el.appendChild(d); });
+  }
+  fillKeys("start-keys"); fillKeys("pause-keys");
+
+  function buildSwatches() {
+    ["start-sw", "pause-sw"].forEach(function (id) {
+      var el = $(id); el.innerHTML = "";
+      UNIFORMS.forEach(function (u) {
+        var locked = u.lvl > levelOf(state.xp);
+        var b = document.createElement("button"); b.type = "button"; b.className = "sw" + (state.uniform === u.id ? " sel" : ""); b.disabled = locked;
+        var i = document.createElement("i"); i.style.background = hexCss(u.top);
+        var t = document.createElement("span"); t.textContent = u.name + (locked ? " · nivel " + u.lvl : "");
+        b.appendChild(i); b.appendChild(t);
+        b.addEventListener("click", function () { applyUniform(u.id); save(); buildSwatches(); });
+        el.appendChild(b);
+      });
+    });
+  }
+  function buildProgress() {
+    var el = $("pause-prog"); el.innerHTML = "";
+    ORDER.forEach(function (id) {
+      var m = MISSIONS[id], done = !!state.done[id];
+      var d = document.createElement("div"); d.className = "pi" + (done ? " done" : "");
+      var b = document.createElement("b"); b.textContent = m.title;
+      var st = document.createElement("div"); st.className = "st"; st.textContent = done ? "Completada" : (missionAvail(id) ? "Disponible" : "Bloqueada");
+      var p = document.createElement("div"); p.textContent = m.instr;
+      d.appendChild(b); d.appendChild(st); d.appendChild(p); el.appendChild(d);
+    });
+  }
+  function setPause(on) {
+    if (!state.started) return;
+    state.pause = on; $("pause").hidden = !on;
+    if (on) { buildSwatches(); buildProgress(); hidePrompt(); }
+  }
+  $("btn-pause").addEventListener("click", function () { setPause(true); });
+  $("btn-resume").addEventListener("click", function () { setPause(false); });
+  var resetArmed = false;
+  $("btn-reset").addEventListener("click", function () {
+    if (!resetArmed) { resetArmed = true; $("btn-reset").textContent = "Confirmar: borrar progreso"; return; }
+    resetArmed = false; $("btn-reset").textContent = "Reiniciar progreso";
+    state.xp = 0; state.done = {}; state.uniform = "celeste"; lessonProg = {}; applyUniform("celeste");
+    save(); refreshHud(); refreshDoorLights(); updateObjective(); buildSwatches(); buildProgress(); toast("Progreso reiniciado.");
+  });
+
+  $("btn-start").addEventListener("click", function () {
+    audioInit(); sfx("done"); state.started = true; $("start").hidden = true; $("hud").hidden = false;
+    player.x = 0; player.z = 21; player.face = Math.PI; cam.yaw = 0; cam.pitch = 0.34; cam.cur = cam.dist;
+    refreshHud(); refreshDoorLights(); updateObjective();
+    toast(isTouch ? "Usa la palanca para caminar y arrastra para mirar." : "Usa WASD para caminar y arrastra con el ratón para mirar.");
+  });
+  $("stat-eps").textContent = ORDER.length + " episodios";
+  (function () {
+    var sv = $("start-save");
+    sv.textContent = state.xp > 0 ? "Progreso guardado: nivel " + levelOf(state.xp) + " · " + state.xp + " XP." : "";
+  })();
+  buildSwatches();
+
+  /* =====================================================================
+     CONTROLES
+     ===================================================================== */
+  var isTouch = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) || "ontouchstart" in window;
+  if (isTouch) $("touch").hidden = false;
+  document.addEventListener("keydown", function (e) {
+    if (e.code === "Escape") {
+      e.preventDefault();
+      if (state.dialog) closeLesson(); else if (state.bot) closeBot(); else if (state.bigmap) mm.click(); else setPause(!state.pause);
+      return;
+    }
+    if (!state.started) return;
+    if (state.dialog && L) {
+      var idx = "1234".indexOf(e.key); if (idx < 0) idx = "abcd".indexOf((e.key || "").toLowerCase());
+      if (idx >= 0 && idx < 4 && L.order.length && !L.over) { onChoice(idx); return; }
+      if ((e.code === "KeyE" || e.code === "Enter" || e.code === "Space") && !$("dlg-primary").hidden) { e.preventDefault(); primary(); return; }
+      return;
+    }
+    if (state.pause) return;
+    if (e.code === "KeyB") { state.bot ? closeBot() : openBot(); return; }
+    if (e.code === "KeyM") { mm.click(); return; }
+    if (e.code === "KeyN") { audioInit(); setSound(!AU.on); return; }
+    if (state.bot) return;
+    if (e.code === "KeyE" && !e.repeat) { interact(); return; }
+    keys[e.code] = true;
+    if (e.code.indexOf("Arrow") === 0 || e.code === "Space") e.preventDefault();
+  });
+  document.addEventListener("keyup", function (e) { keys[e.code] = false; });
+  window.addEventListener("blur", function () { keys = {}; joy.x = 0; joy.y = 0; });
+  $("prompt").addEventListener("click", interact);
+  $("t-act").addEventListener("click", function () { if (state.dialog && L && !$("dlg-primary").hidden) primary(); else interact(); });
+  $("t-run").addEventListener("click", function () { touchRun = !touchRun; $("t-run").classList.toggle("on", touchRun); });
+
+  /* Cámara: arrastrar */
+  var drag = null, canvasEl = $("gl");
+  canvasEl.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  canvasEl.addEventListener("pointerdown", function (e) { if (drag === null) { drag = { id: e.pointerId, x: e.clientX, y: e.clientY }; try { canvasEl.setPointerCapture(e.pointerId); } catch (er) {} } });
+  canvasEl.addEventListener("pointermove", function (e) {
+    if (!drag || drag.id !== e.pointerId) return;
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+    cam.yaw -= dx * 0.0065; cam.pitch = Math.max(0.05, Math.min(1.25, cam.pitch + dy * 0.005));
+  });
+  function endDrag(e) { if (drag && drag.id === e.pointerId) drag = null; }
+  canvasEl.addEventListener("pointerup", endDrag); canvasEl.addEventListener("pointercancel", endDrag);
+  canvasEl.addEventListener("wheel", function (e) { e.preventDefault(); cam.dist = Math.max(2.6, Math.min(9, cam.dist + e.deltaY * 0.004)); }, { passive: false });
+
+  /* Palanca táctil */
+  (function () {
+    var base = $("joy"), knob = $("joyknob"), pid = null;
+    function move(e) {
+      var r = base.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      var dx = (e.clientX - cx) / 50, dy = (e.clientY - cy) / 50, l = Math.hypot(dx, dy);
+      if (l > 1) { dx /= l; dy /= l; }
+      joy.x = dx; joy.y = dy; knob.style.transform = "translate(" + dx * 34 + "px," + dy * 34 + "px)";
+    }
+    base.addEventListener("pointerdown", function (e) { pid = e.pointerId; try { base.setPointerCapture(pid); } catch (er) {} move(e); });
+    base.addEventListener("pointermove", function (e) { if (e.pointerId === pid) move(e); });
+    function up(e) { if (e.pointerId === pid) { pid = null; joy.x = 0; joy.y = 0; knob.style.transform = ""; } }
+    base.addEventListener("pointerup", up); base.addEventListener("pointercancel", up);
+  })();
+
+  /* =====================================================================
+     BUCLE PRINCIPAL
+     ===================================================================== */
+  var last = performance.now();
+  function frame(now) {
+    requestAnimationFrame(frame);
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    var t = now / 1000;
+    if (!state.pause) {
+      updatePlayer(dt); updateDoors(dt); updateNPCs(dt, t);
+    }
+    updateCamera(dt);
+    updateInteract();
+    if (state.started) drawMap();
+    beaconG.visible = state.started && !state.pause && !(state.entered && !objective.id);
+    beaconG.position.set(objective.x, 0, objective.z); ring.scale.setScalar(1 + 0.18 * Math.sin(t * 3)); beacon.material.opacity = 0.22 + 0.1 * Math.sin(t * 3);
+    renderer.render(scene, camera);
+    if (isTouch) { $("touch").hidden = state.dialog || state.bot || state.pause || !state.started; }
+  }
+  refreshHud(); refreshDoorLights(); updateObjective();
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
